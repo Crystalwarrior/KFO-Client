@@ -82,11 +82,13 @@ private:
   bool m_flipped = false;
   bool play_once = true;
 
+  bool blend = false;
+
   //Set the movie's image to provided paths, preparing for playback.
   void load_image(QString p_char, QString p_emote, QString emote_prefix);
 
   //Start playback of the movie (if animated).
-  void play();
+  void play(int delay = 0);
 
   //Play a frame-specific effect, if there's any defined for that specific frame.
   void play_frame_effect(int frame);

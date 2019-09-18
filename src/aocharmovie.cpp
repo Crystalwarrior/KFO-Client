@@ -53,7 +53,6 @@ void AOCharMovie::load_image(QString p_char, QString p_emote, QString emote_pref
   QPixmap f_pixmap = this->get_pixmap(m_reader->read());
   int f_delay = m_reader->nextImageDelay();
 
-  frame = 0;
   max_frames = m_reader->imageCount();
 
   this->set_frame(f_pixmap);
@@ -149,12 +148,18 @@ void AOCharMovie::load_network_effects()
   }
 }
 
-void AOCharMovie::play()
+void AOCharMovie::play(int delay)
 {
+  if (!blend)
+    frame = 0;
   play_frame_effect(frame);
   if (max_frames <= 1)
     return;
-  ticker->start(this->get_frame_delay(movie_delays[frame]));
+
+  if (blend)
+    frame = frame % max_frames; //Make sure it wraps around properly
+
+  ticker->start(delay);
 }
 
 void AOCharMovie::play_pre(QString p_char, QString p_emote, int duration)
@@ -162,24 +167,45 @@ void AOCharMovie::play_pre(QString p_char, QString p_emote, int duration)
   load_image(p_char, p_emote, "");
   //As much as I'd like to screw around with [Time] durations modifying the animation speed, I don't think I can reliably do that,
   //not without looping through all frames in the image at least - which causes lag. So for now it simply ends the preanimation early instead.
+  blend = false;
   play_once = true;
   if (duration > 0) //It's -1 if there's no definition in [Time] for it. In which case, it will let the animation run out in full. Duration 0 does the same.
     preanim_timer->start(duration * time_mod); //This timer will not fire if the animation finishes earlier than that
-  play();
+  play(get_frame_delay(movie_delays[frame]));
 }
 
 void AOCharMovie::play_talking(QString p_char, QString p_emote)
 {
-  play_once = false;
+  int delay = 0;
+  if (play_once != true) //Last animation was looping
+    blend = true; //Blend the two, it was probably an idle animation
+  else
+    play_once = false;
+
+  if (blend)
+    delay = qMax(0, ticker->remainingTime()); //calculate the time remaining. If the timer is inactive it shouldn't return -1 thanks to the  qMax.
+
   load_image(p_char, p_emote, "(b)");
-  play();
+  if (!blend)
+    delay = movie_delays[0]; //This should exist unless something's really fucky is going on
+  play(get_frame_delay(delay));
 }
 
 void AOCharMovie::play_idle(QString p_char, QString p_emote)
 {
-  play_once = false;
+  int delay = 0;
+  if (play_once != true) //Last animation was looping
+    blend = true; //Blend the two, it was probably an idle animation
+  else
+    play_once = false;
+
+  if (blend)
+    delay = qMax(0, ticker->remainingTime()); //calculate the time remaining. If the timer is inactive it shouldn't return -1 thanks to the  qMax.
+
   load_image(p_char, p_emote, "(a)");
-  play();
+  if (!blend)
+    delay = movie_delays[0]; //This should exist unless something's really fucky is going on
+  play(get_frame_delay(delay));
 }
 
 void AOCharMovie::play_frame_effect(int frame)
