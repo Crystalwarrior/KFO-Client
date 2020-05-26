@@ -77,6 +77,14 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   ui_vp_player_char = new AOCharMovie(ui_viewport, ao_app);
   ui_vp_sideplayer_char = new AOCharMovie(ui_viewport, ao_app);
   ui_vp_sideplayer_char->hide();
+
+  m_player = new QMediaPlayer(this);
+  m_player->setAudioRole(QAudio::VideoRole);
+
+  m_videoWidget = new QVideoWidget(this);
+  m_videoWidget->hide();
+  m_player->setVideoOutput(m_videoWidget);
+
   ui_vp_desk = new AOScene(ui_viewport, ao_app);
   ui_vp_legacy_desk = new AOScene(ui_viewport, ao_app);
 
@@ -531,6 +539,12 @@ void Courtroom::set_widgets()
   ui_vp_sideplayer_char->move(0, 0);
   ui_vp_sideplayer_char->combo_resize(ui_viewport->width(),
                                       ui_viewport->height());
+
+  m_videoWidget->move(ui_viewport->x(), ui_viewport->y());
+  m_videoWidget->resize(ui_viewport->width(), ui_viewport->height());
+  m_player->setMedia(QUrl(ao_app->get_base_path() + "999-Seek A Way Out.avi"));
+  m_videoWidget->show();
+  m_player->play();
 
   // the AO2 desk element
   ui_vp_desk->move(0, 0);

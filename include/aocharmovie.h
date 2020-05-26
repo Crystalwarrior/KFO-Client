@@ -6,6 +6,8 @@
 #include <QImageReader>
 #include <QLabel>
 #include <QTimer>
+#include <QMediaPlayer>
+#include <QVideoWidget>>
 
 class AOApplication;
 
@@ -63,6 +65,8 @@ private:
   QTimer *ticker;
   QString last_path;
   QImageReader *m_reader = new QImageReader();
+  QMediaPlayer *m_player;
+  QVideoWidget *m_videoWidget;
 
   QElapsedTimer actual_time;
 

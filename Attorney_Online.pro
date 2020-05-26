@@ -30,9 +30,9 @@ LIBS += -lbassopus
 
 #DEFINES += QTAUDIO
 
-contains(DEFINES, QTAUDIO) {
-QT += multimedia
-}
+#contains(DEFINES, QTAUDIO) {
+QT += multimedia multimediawidgets
+#}
 
 macx:LIBS += -framework CoreFoundation -framework Foundation -framework CoreServices
 

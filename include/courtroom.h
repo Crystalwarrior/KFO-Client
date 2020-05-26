@@ -57,6 +57,7 @@
 #include <QTextBoundaryFinder>
 #include <QTextCharFormat>
 //#include <QRandomGenerator>
+#include <QMediaPlayer>
 
 #include <stack>
 
@@ -482,6 +483,9 @@ private:
   AOMovie *ui_vp_testimony;
   AOMovie *ui_vp_wtce;
   AOMovie *ui_vp_objection;
+
+  QMediaPlayer *m_player;
+  QVideoWidget *m_videoWidget;
 
   QTextEdit *ui_ic_chatlog;
 
