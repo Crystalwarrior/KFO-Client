@@ -82,7 +82,9 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   m_player->setAudioRole(QAudio::VideoRole);
 
   m_videoWidget = new QVideoWidget(this);
-  m_videoWidget->hide();
+  m_videoWidget->setAttribute(Qt::WA_TransparentForMouseEvents);
+  m_videoWidget->setMinimumSize(QSize(64, 64));
+//  m_videoWidget->hide();
   m_player->setVideoOutput(m_videoWidget);
 
   ui_vp_desk = new AOScene(ui_viewport, ao_app);
@@ -301,6 +303,8 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   connect(ui_vp_player_char, SIGNAL(flash()), this, SLOT(do_flash()));
   connect(ui_vp_player_char, SIGNAL(play_sfx(QString)), this,
           SLOT(play_char_sfx(QString)));
+
+  connect(m_player, SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)), this, SLOT(media_done(QMediaPlayer::MediaStatus)));
 
   connect(text_delay_timer, SIGNAL(timeout()), this,
           SLOT(start_chat_ticking()));
@@ -542,9 +546,6 @@ void Courtroom::set_widgets()
 
   m_videoWidget->move(ui_viewport->x(), ui_viewport->y());
   m_videoWidget->resize(ui_viewport->width(), ui_viewport->height());
-  m_player->setMedia(QUrl(ao_app->get_base_path() + "999-Seek A Way Out.avi"));
-  m_videoWidget->show();
-  m_player->play();
 
   // the AO2 desk element
   ui_vp_desk->move(0, 0);
@@ -1970,6 +1971,22 @@ void Courtroom::handle_chatmessage_2()
 
   set_scene(m_chatmessage[DESK_MOD], m_chatmessage[SIDE]);
 
+  qDebug() << m_chatmessage[PRE_EMOTE] << m_chatmessage[PRE_EMOTE].endsWith(".avi", Qt::CaseInsensitive);
+  if (m_chatmessage[PRE_EMOTE].endsWith(".avi", Qt::CaseInsensitive))
+  {
+    QString emote_path = ao_app->get_character_path(
+          m_chatmessage[CHAR_NAME], m_chatmessage[PRE_EMOTE]);
+    if (file_exists(emote_path))
+    {
+      qDebug() << emote_path;
+      m_player->setMedia(QUrl::fromLocalFile(emote_path));
+//      m_videoWidget->show();
+      qDebug() << "Time to play media!";
+      m_player->play();
+      return;
+    }
+  }
+
   int emote_mod = m_chatmessage[EMOTE_MOD].toInt();
 
   if (ao_app->flipping_enabled && m_chatmessage[FLIP].toInt() == 1)
@@ -2625,6 +2642,12 @@ void Courtroom::preanim_done()
 {
   anim_state = 1;
   handle_chatmessage_3();
+}
+
+void Courtroom::media_done(QMediaPlayer::MediaStatus status)
+{
+  if (status == QMediaPlayer::UnknownMediaStatus || status == QMediaPlayer::NoMedia || status == QMediaPlayer::EndOfMedia || status == QMediaPlayer::InvalidMedia)
+    handle_chatmessage_3();
 }
 
 void Courtroom::start_chat_ticking()
