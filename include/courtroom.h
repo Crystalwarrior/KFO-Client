@@ -58,6 +58,7 @@
 #include <QTextCharFormat>
 //#include <QRandomGenerator>
 #include <QMediaPlayer>
+#include <QVideoWidget>
 
 #include <stack>
 

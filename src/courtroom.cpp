@@ -81,11 +81,17 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   m_player = new QMediaPlayer(this);
   m_player->setAudioRole(QAudio::VideoRole);
 
-  m_videoWidget = new QVideoWidget(this);
+  m_videoWidget = new QVideoWidget;
   m_videoWidget->setAttribute(Qt::WA_TransparentForMouseEvents);
-  m_videoWidget->setMinimumSize(QSize(64, 64));
-//  m_videoWidget->hide();
-  m_player->setVideoOutput(m_videoWidget);
+
+  m_videoWidget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+
+  QPalette p = palette();
+  p.setColor(QPalette::Window, Qt::black);
+  m_videoWidget->setPalette(p);
+
+  m_videoWidget->setAttribute(Qt::WA_OpaquePaintEvent);
+  m_videoWidget->hide();
 
   ui_vp_desk = new AOScene(ui_viewport, ao_app);
   ui_vp_legacy_desk = new AOScene(ui_viewport, ao_app);
@@ -1980,7 +1986,8 @@ void Courtroom::handle_chatmessage_2()
     {
       qDebug() << emote_path;
       m_player->setMedia(QUrl::fromLocalFile(emote_path));
-//      m_videoWidget->show();
+      m_videoWidget->show();
+      m_player->setVideoOutput(m_videoWidget);
       qDebug() << "Time to play media!";
       m_player->play();
       return;
@@ -2647,7 +2654,11 @@ void Courtroom::preanim_done()
 void Courtroom::media_done(QMediaPlayer::MediaStatus status)
 {
   if (status == QMediaPlayer::UnknownMediaStatus || status == QMediaPlayer::NoMedia || status == QMediaPlayer::EndOfMedia || status == QMediaPlayer::InvalidMedia)
+  {
+    qDebug() << "lol";
+    m_videoWidget->hide();
     handle_chatmessage_3();
+  }
 }
 
 void Courtroom::start_chat_ticking()
