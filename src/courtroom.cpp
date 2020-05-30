@@ -81,7 +81,7 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   m_player = new QMediaPlayer(this);
   m_player->setAudioRole(QAudio::VideoRole);
 
-  m_videoWidget = new QVideoWidget(this);
+  m_videoWidget = new QVideoWidget;
   m_videoWidget->setAttribute(Qt::WA_TransparentForMouseEvents);
 
   m_videoWidget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
@@ -91,7 +91,7 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   m_videoWidget->setPalette(p);
 
   m_videoWidget->setAttribute(Qt::WA_OpaquePaintEvent);
-//  m_videoWidget->hide();
+  m_videoWidget->hide();
 
   ui_vp_desk = new AOScene(ui_viewport, ao_app);
   ui_vp_legacy_desk = new AOScene(ui_viewport, ao_app);
