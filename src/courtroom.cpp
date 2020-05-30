@@ -1988,6 +1988,7 @@ void Courtroom::handle_chatmessage_2()
       m_player->setMedia(QUrl::fromLocalFile(emote_path));
       m_videoWidget->show();
       m_player->setVideoOutput(m_videoWidget);
+      m_player->setVolume(ui_sfx_slider->value());
       qDebug() << "Time to play media!";
       m_player->play();
       return;
@@ -4359,6 +4360,7 @@ void Courtroom::on_sfx_slider_moved(int p_value)
     music_player->set_volume(p_value, i);
   }
   objection_player->set_volume(p_value);
+  m_player->setVolume(p_value);
   ui_ic_chat_message->setFocus();
 }
 
