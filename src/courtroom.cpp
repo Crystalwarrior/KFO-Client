@@ -84,7 +84,7 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
 
   ui_vp_chatbox = new AOImage(this, ao_app);
   ui_vp_showname = new QLabel(ui_vp_chatbox);
-  ui_vp_showname->setAlignment(Qt::AlignHCenter);
+  ui_vp_showname->setAlignment(Qt::AlignLeft);
   ui_vp_chat_arrow = new AOMovie(ui_vp_chatbox, ao_app);
   ui_vp_chat_arrow->set_play_once(false);
 
@@ -1889,7 +1889,7 @@ void Courtroom::handle_chatmessage_2()
   {
     ui_vp_chatbox->set_image("chatblank");
   }
-  else // Aw yeah dude do some showname resizing magic
+  else // Aw yeah dude do some showname magic
   {
     if (!ui_vp_chatbox->set_image("chat"))
       ui_vp_chatbox->set_image("chatbox");
@@ -1929,6 +1929,19 @@ void Courtroom::handle_chatmessage_2()
             ->get_design_element("showname_extra_width", "courtroom_design.ini",
                                  customchar)
             .toInt();
+    QString align =
+        ao_app
+            ->get_design_element("showname_align", "courtroom_design.ini",
+                                 customchar)
+            .toLower();
+    if (align == "right")
+      ui_vp_showname->setAlignment(Qt::AlignRight);
+    else if (align == "center")
+      ui_vp_showname->setAlignment(Qt::AlignHCenter);
+    else if (align == "justify")
+      ui_vp_showname->setAlignment(Qt::AlignHCenter);
+    else
+      ui_vp_showname->setAlignment(Qt::AlignLeft);
 
     if (extra_width > 0) {
       if (fm_width > default_width.width &&
