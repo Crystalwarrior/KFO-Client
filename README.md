@@ -1,3 +1,5 @@
+ THIS FORK IS NO LONGER MAINTANED. Please use the fork this is based on, AO2-Client. 
+
 # Attorney Online
 
 [Attorney Online](https://aceattorneyonline.com) is an online version of the world-renowned courtroom drama simulator that allows you to create and play out cases in an off-the-cuff format.
