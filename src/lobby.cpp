@@ -113,7 +113,7 @@ void Lobby::reset_selection()
 void Lobby::loadUI()
 {
   this->setWindowTitle(
-      tr("Attorney Online Golden: %1").arg(ao_app->applicationVersion()));
+      tr("KFO %1").arg(ao_app->applicationVersion()));
   this->setWindowIcon(QIcon(":/logo.png"));
   this->setWindowFlags((this->windowFlags() | Qt::CustomizeWindowHint));
 
@@ -299,8 +299,10 @@ void Lobby::on_about_clicked()
 {
   const bool hasApng = QImageReader::supportedImageFormats().contains("apng");
   QString msg =
-      tr("<h2>Attorney Online Golden: %1</h2>"
-         // "<h3>A Shred of Moon's Light.</h3>"
+      tr("<h2>Killing Fever Online: %1</h2>"
+         "<p><b>Main Development:</b><br>"
+         "Crystalwarrior"
+         "<p><h3>Attorney Online Golden</h3>"
          "<p><b>Main Development:</b><br>"
          "Satoru;1816 (Lead Developer), SymphonyVR (Rust Server & Design), Sigma | XVIII"
          "<p><b>Special thanks:</b><br>"

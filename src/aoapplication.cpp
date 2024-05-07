@@ -31,7 +31,7 @@ AOApplication::AOApplication(int &argc, char **argv) : QApplication(argc, argv)
   original_message_handler = qInstallMessageHandler(message_handler);
 
   setApplicationVersion(get_version_string());
-  setApplicationDisplayName(tr("Attorney Online Golden: %1").arg(applicationVersion()));
+  setApplicationDisplayName(tr("%1 %2").arg("KFO", applicationVersion()));
 }
 
 AOApplication::~AOApplication()
@@ -116,10 +116,8 @@ void AOApplication::destruct_courtroom()
 
 QString AOApplication::get_version_string()
 {
-  return "Luna 1.0.0 (RC 1.5)";
-
-  // return QString::number(RELEASE) + "." + QString::number(MAJOR_VERSION) + "." +
-  //       QString::number(MINOR_VERSION);
+  return QString::number(RELEASE) + "." + QString::number(MAJOR_VERSION) + "." +
+         QString::number(MINOR_VERSION);
 }
 
 void AOApplication::server_disconnected()

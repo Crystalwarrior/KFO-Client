@@ -110,6 +110,7 @@ void NetworkManager::request_document(MSDocumentType document_type,
   const QString &endpoint = endpoints[document_type];
   QUrl url;
   if (document_type == MSDocumentType::ClientVersion) {
+    // TODO: swap this out so it's not hardcoded
     url = QUrl("https://file.garden/YEp8caMz-xKjrHSj/Attorney%20Online%20Golden%20Releases/current_version.json");
   } else {
     url = QUrl(ms_baseurl + endpoint);
