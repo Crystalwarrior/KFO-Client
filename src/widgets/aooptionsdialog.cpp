@@ -38,12 +38,12 @@ void AOOptionsDialog::populateAudioDevices()
 {
   ui_audio_device_combobox->clear();
   if (needsDefaultAudioDevice()) {
-    ui_audio_device_combobox->addItem("default");
+    ui_audio_device_combobox->addItem("default", "default");
   }
 
   BASS_DEVICEINFO info;
   for (int a = 0; BASS_GetDeviceInfo(a, &info); a++) {
-    ui_audio_device_combobox->addItem(info.name);
+    ui_audio_device_combobox->addItem(info.name, info.name);
   }
 }
 
@@ -119,7 +119,7 @@ void AOOptionsDialog::setWidgetData(QComboBox *widget, const QString &value)
 
 template <> QString AOOptionsDialog::widgetData(QComboBox *widget) const
 {
-  return widget->currentText();
+  return widget->currentData().toString();
 }
 
 template <>
@@ -249,7 +249,7 @@ void AOOptionsDialog::updateValues()
 
     for (const QString &l_theme : qAsConst(l_themes)) {
       if (!themes.contains(l_theme)) {
-        ui_theme_combobox->addItem(l_theme);
+        ui_theme_combobox->addItem(l_theme, l_theme);
         themes.insert(l_theme);
       }
     }
@@ -261,7 +261,7 @@ void AOOptionsDialog::updateValues()
   for (const QString &l_subtheme : qAsConst(l_subthemes)) {
     if (l_subtheme.toLower() != "server" && l_subtheme.toLower() != "default" &&
         l_subtheme.toLower() != "effects" && l_subtheme.toLower() != "misc") {
-      ui_subtheme_combobox->addItem(l_subtheme);
+      ui_subtheme_combobox->addItem(l_subtheme, l_subtheme);
     }
   }
 
@@ -280,7 +280,10 @@ void AOOptionsDialog::updateValues()
 
 void AOOptionsDialog::savePressed()
 {
-  bool l_reload_theme_required = (ui_theme_combobox->currentText() != Options::getInstance().theme());
+  bool l_reload_theme_required =
+      (ui_theme_combobox->currentText() != Options::getInstance().theme()) ||
+      (ui_theme_scaling_factor_sb->value() !=
+       Options::getInstance().themeScalingFactor());
   for (const OptionEntry &entry : qAsConst(optionEntries)) {
     entry.save();
   }
@@ -323,8 +326,8 @@ void AOOptionsDialog::themeChanged(int i)
 {
   ui_subtheme_combobox->clear();
   // Fill the combobox with the names of the themes.
-  ui_subtheme_combobox->addItem("server");
-  ui_subtheme_combobox->addItem("default");
+  ui_subtheme_combobox->addItem("server", "server");
+  ui_subtheme_combobox->addItem("default", "server");
 
   QStringList l_subthemes = QDir(ao_app->get_real_path(ao_app->get_theme_path(
                                      "", ui_theme_combobox->itemText(i))))
@@ -334,7 +337,7 @@ void AOOptionsDialog::themeChanged(int i)
     if (l_subthemes.toLower() != "server" &&
         l_subthemes.toLower() != "default" &&
         l_subthemes.toLower() != "effects" && l_subthemes.toLower() != "misc") {
-      ui_subtheme_combobox->addItem(l_subthemes);
+      ui_subtheme_combobox->addItem(l_subthemes, l_subthemes);
     }
   }
 
@@ -401,6 +404,7 @@ void AOOptionsDialog::setupUI()
     QDesktopServices::openUrl(QUrl::fromLocalFile(p_path));
   });
 
+  FROM_UI(QSpinBox, theme_scaling_factor_sb)
   FROM_UI(QCheckBox, animated_theme_cb)
   FROM_UI(QSpinBox, stay_time_spinbox)
   FROM_UI(QCheckBox, instant_objection_cb)
@@ -434,6 +438,9 @@ void AOOptionsDialog::setupUI()
   FROM_UI(QCheckBox, asset_streaming_cb)
   FROM_UI(QCheckBox, image_streaming_cb)
 
+  registerOption<QSpinBox, int>("theme_scaling_factor_sb",
+                                &Options::themeScalingFactor,
+                                &Options::setThemeScalingFactor);
   registerOption<QCheckBox, bool>("animated_theme_cb",
                                   &Options::animatedThemeEnabled,
                                   &Options::setAnimatedThemeEnabled);
@@ -462,6 +469,15 @@ void AOOptionsDialog::setupUI()
                                   &Options::setDiscordEnabled);
   registerOption<QComboBox, QString>("language_combobox", &Options::language,
                                      &Options::setLanguage);
+
+  ui_language_combobox->addItem("English", "en");
+  ui_language_combobox->addItem("Deutsch", "de");
+  ui_language_combobox->addItem("Español", "es");
+  ui_language_combobox->addItem("Português", "pt");
+  ui_language_combobox->addItem("Polski", "pl");
+  ui_language_combobox->addItem("日本語", "jp");
+  ui_language_combobox->addItem("Русский", "ru");
+
   registerOption<QComboBox, QString>("scaling_combobox",
                                      &Options::defaultScalingMode,
                                      &Options::setDefaultScalingMode);
@@ -741,6 +757,12 @@ void AOOptionsDialog::setupUI()
 
   ui_log_timestamp_format_combobox->setCurrentText(l_current_format);
 
+  ui_log_timestamp_format_combobox->addItem(l_current_format);
+  ui_log_timestamp_format_combobox->addItem("h:mm:ss AP");
+  ui_log_timestamp_format_combobox->addItem("hh:mm:ss");
+  ui_log_timestamp_format_combobox->addItem("h:mm AP");
+  ui_log_timestamp_format_combobox->addItem("hh:mm");
+
   if (!Options::getInstance().logTimestampEnabled()) {
     ui_log_timestamp_format_combobox->setDisabled(true);
   }
@@ -818,10 +840,14 @@ void AOOptionsDialog::setupUI()
 
 void AOOptionsDialog::onTimestampFormatEdited()
 {
+  const QString format = ui_log_timestamp_format_combobox->currentText();
+  const int index = ui_log_timestamp_format_combobox->currentIndex();
+
+  ui_log_timestamp_format_combobox->setItemText(index, format);
+  ui_log_timestamp_format_combobox->setItemData(index, format);
   ui_log_timestamp_format_lbl->setText(
       tr("Log timestamp format:\n") +
-      QDateTime::currentDateTime().toString(
-          ui_log_timestamp_format_combobox->currentText()));
+      QDateTime::currentDateTime().toString(format));
 }
 
 void AOOptionsDialog::timestampCbChanged(int state)

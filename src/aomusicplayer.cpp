@@ -38,7 +38,8 @@ QString AOMusicPlayer::play(QString p_song, int channel, bool loop,
         BASS_ChannelStop(m_stream_list[channel]);
         return QObject::tr("[MISSING] Streaming disabled.");
     }
-    newstream = BASS_StreamCreateURL(f_path.toStdString().c_str(), 0, streaming_flags, nullptr, 0);
+    QUrl l_url = QUrl(f_path);
+    newstream = BASS_StreamCreateURL(l_url.toEncoded().toStdString().c_str(), 0, streaming_flags, nullptr, 0);
   }
   else {
     f_path = ao_app->get_real_path(ao_app->get_music_path(p_song));
@@ -60,11 +61,19 @@ QString AOMusicPlayer::play(QString p_song, int channel, bool loop,
   if (loop && file_exists(d_path)) // Contains loop/etc. information file
   {
     QStringList lines = ao_app->read_file(d_path).split("\n");
+    bool seconds_mode = false;
     foreach (QString line, lines) {
       QStringList args = line.split("=");
       if (args.size() < 2)
         continue;
       QString arg = args[0].trimmed();
+      if (arg == "seconds") {
+        if (args[1].trimmed() == "true") {
+          seconds_mode = true; // Use new epic behavior
+          continue;
+        }
+        continue;
+      }
 
       float sample_rate;
       BASS_ChannelGetAttribute(newstream, BASS_ATTRIB_FREQ, &sample_rate);
@@ -76,8 +85,15 @@ QString AOMusicPlayer::play(QString p_song, int channel, bool loop,
       int num_channels = 2;
 
       // Calculate the bytes for loop_start/loop_end to use with the sync proc
-      QWORD bytes = static_cast<QWORD>(args[1].trimmed().toUInt() *
-                                       sample_size * num_channels);
+      QWORD bytes;
+      if (seconds_mode) {
+        bytes =
+            BASS_ChannelSeconds2Bytes(newstream, args[1].trimmed().toDouble());
+      }
+      else {
+        bytes = static_cast<QWORD>(args[1].trimmed().toUInt() * sample_size *
+                                   num_channels);
+      }
       if (arg == "loop_start")
         loop_start[channel] = bytes;
       else if (arg == "loop_length")

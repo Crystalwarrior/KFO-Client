@@ -138,7 +138,7 @@
              </property>
             </widget>
            </item>
-           <item row="7" column="0">
+           <item row="8" column="0">
             <widget class="QLabel" name="instant_objection_lbl">
              <property name="text">
               <string>Instant Objection:</string>
@@ -299,44 +299,8 @@
              </property>
             </widget>
            </item>
-           <item row="17" column="1">
-            <widget class="QComboBox" name="language_combobox">
-             <item>
-              <property name="text">
-               <string>en</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>de</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>es</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>pt</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>pl</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>jp</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>ru</string>
-              </property>
-             </item>
-            </widget>
+           <item row="18" column="1">
+            <widget class="QComboBox" name="language_combobox"/>
            </item>
            <item row="18" column="0">
             <widget class="QLabel" name="scaling_label">
@@ -348,7 +312,7 @@
              </property>
             </widget>
            </item>
-           <item row="18" column="1">
+           <item row="19" column="1">
             <widget class="QComboBox" name="scaling_combobox"/>
            </item>
            <item row="19" column="0" colspan="2">
@@ -920,6 +884,26 @@ Double click the items to download them!</string>
                <string>Download link</string>
               </property>
              </column>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QSpinBox" name="theme_scaling_factor_sb">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>8</number>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="theme_scaling_factor_lbl">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The factor by which to scale the size of the UI&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>UI Scaling Factor</string>
+             </property>
             </widget>
            </item>
           </layout>
@@ -1610,26 +1594,6 @@ Default: 0.</string>
          <property name="editable">
           <bool>true</bool>
          </property>
-         <item>
-          <property name="text">
-           <string>h:mm:ss AP</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>hh:mm:ss</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>h:mm AP</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>hh:mm</string>
-          </property>
-         </item>
         </widget>
        </item>
        <item row="6" column="0">

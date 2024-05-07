@@ -250,7 +250,7 @@ void Lobby::on_load_demo_released()
 
 void Lobby::on_refresh_released()
 {
-  net_manager->get_server_list(std::bind(&Lobby::list_servers, this));
+  net_manager->get_server_list();
   get_motd();
   list_favorites();
 }

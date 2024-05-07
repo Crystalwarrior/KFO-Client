@@ -71,7 +71,7 @@ signals:
   void imageLoaded(const QImage& image);
 
 public slots:
-  void get_server_list(const std::function<void()> &cb);
+  void get_server_list();
   void ship_server_packet(QString p_packet);
   void join_to_server();
   void handle_server_packet(const QString& p_data);
@@ -83,8 +83,7 @@ public slots:
 
   void send_heartbeat();
 private slots:
-  void ms_request_finished(QNetworkReply *reply,
-                           const std::function<void()> &cb);
+  void ms_request_finished(QNetworkReply *reply);
   void image_reply_finished(QNetworkReply *reply);
   void save_folder(const QByteArray& folderData, const QString& pathUrl, const QString& localFolderPath_r);
 

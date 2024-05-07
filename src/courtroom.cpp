@@ -117,7 +117,7 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   ui_vp_sticker->setAttribute(Qt::WA_TransparentForMouseEvents);
   ui_vp_sticker->setObjectName("ui_vp_sticker");
 
-  ui_vp_showname = new QLabel(ui_vp_chatbox);
+  ui_vp_showname = new AOChatboxLabel(ui_vp_chatbox);
   ui_vp_showname->setObjectName("ui_vp_showname");
   ui_vp_showname->setAlignment(Qt::AlignLeft);
   ui_vp_chat_arrow = new InterfaceLayer(this, ao_app);
@@ -1470,6 +1470,11 @@ void Courtroom::set_widgets()
 
 void Courtroom::set_fonts(QString p_char)
 {
+  QFont new_font = ao_app->default_font;
+  int new_font_size = new_font.pointSize() * Options::getInstance().themeScalingFactor();
+  new_font.setPointSize(new_font_size);
+  ao_app->setFont(new_font);
+
   set_font(ui_vp_showname, "", "showname", p_char);
   set_font(ui_vp_message, "", "message", p_char);
   set_font(ui_ic_chatlog, "", "ic_chatlog", p_char);
@@ -1492,7 +1497,7 @@ void Courtroom::set_font(QWidget *widget, QString class_name,
   QString design_file = "courtroom_fonts.ini";
   if (f_pointsize <= 0)
     f_pointsize =
-        ao_app->get_design_element(p_identifier, design_file, ao_app->get_chat(p_char)).toInt();
+        ao_app->get_design_element(p_identifier, design_file, ao_app->get_chat(p_char)).toInt() * Options::getInstance().themeScalingFactor();
   if (font_name == "")
     font_name =
         ao_app->get_design_element(p_identifier + "_font", design_file, ao_app->get_chat(p_char));
@@ -1515,8 +1520,27 @@ void Courtroom::set_font(QWidget *widget, QString class_name,
                                               design_file, ao_app->get_chat(p_char)) !=
                    "1"; // is the font anti-aliased or not?
 
+  bool outlined = ao_app->get_design_element(p_identifier + "_outlined", design_file, ao_app->get_chat(p_char)) == "1";
+  QColor outline_color;
+  int outline_width = 1;
+  if (outlined) {
+      QString outline_color_result =
+          ao_app->get_design_element(p_identifier + "_outline_color", design_file, ao_app->get_chat(p_char));
+      outline_color = QColor(0,0,0);
+      if (outline_color_result != "") {
+        QStringList o_color_list = outline_color_result.split(",");
+
+        if (o_color_list.size() >= 3) {
+          outline_color.setRed(o_color_list.at(0).toInt());
+          outline_color.setGreen(o_color_list.at(1).toInt());
+          outline_color.setBlue(o_color_list.at(2).toInt());
+        }
+      }
+      outline_width = ao_app->get_design_element(p_identifier + "_outline_width", design_file, ao_app->get_chat(p_char)).toInt() * Options::getInstance().themeScalingFactor();
+  }
+
   this->set_qfont(widget, class_name,
-                  get_qfont(font_name, f_pointsize, antialias), f_color, bold);
+                  get_qfont(font_name, f_pointsize, antialias), f_color, bold, outlined, outline_color, outline_width);
 }
 
 QFont Courtroom::get_qfont(QString font_name, int f_pointsize, bool antialias)
@@ -1535,10 +1559,17 @@ QFont Courtroom::get_qfont(QString font_name, int f_pointsize, bool antialias)
 }
 
 void Courtroom::set_qfont(QWidget *widget, QString class_name, QFont font,
-                          QColor f_color, bool bold)
+                          QColor f_color, bool bold, bool outlined, QColor outline_color, int outline_width)
 {
   if (class_name.isEmpty())
     class_name = widget->metaObject()->className();
+
+  if (class_name == "AOChatboxLabel") { // Only shownames can be outlined
+     ui_vp_showname->setIsOutlined(outlined);
+     ui_vp_showname->setOutlineColor(outline_color);
+     ui_vp_showname->setTextColor(f_color);
+     ui_vp_showname->setOutlineWidth(outline_width);
+  }
 
   font.setBold(bold);
   widget->setFont(font);
@@ -2178,6 +2209,8 @@ void Courtroom::on_chat_return_pressed()
 
   QStringList packet_contents;
   QString f_side;
+  // have to fetch this early for a workaround. i hate this system, but i am stuck with it for now
+  int f_emote_mod = ao_app->get_emote_mod(current_char, current_emote);
 
   if (selected_side == "")
     f_side = ao_app->get_char_side(current_char);
@@ -2194,14 +2227,15 @@ void Courtroom::on_chat_return_pressed()
       else if (f_desk_mod == DESK_EMOTE_ONLY_EX || f_desk_mod == DESK_EMOTE_ONLY)
         f_desk_mod = DESK_SHOW;
     }
-    if (f_desk_mod == -1)
+    if (f_desk_mod == -1 && (f_emote_mod == 5 || f_emote_mod == 6)) // workaround for inis that broke after deprecating "chat"
+      f_desk_mod = DESK_HIDE;
+    else if (f_desk_mod == -1)
       f_desk_mod = DESK_SHOW;
   }
 
   packet_contents.append(QString::number(f_desk_mod));
 
   QString f_pre = ao_app->get_pre_emote(current_char, current_emote);
-  int f_emote_mod = ao_app->get_emote_mod(current_char, current_emote);
   QString f_sfx = "1";
   int f_sfx_delay = get_char_sfx_delay();
 
@@ -2786,6 +2820,10 @@ bool Courtroom::handle_objection()
 
   // if an objection is used
   if (objection_mod <= 4 && objection_mod >= 1) {
+    ui_vp_chatbox->setVisible(chatbox_always_show);
+    ui_vp_message->setVisible(chatbox_always_show);
+    ui_vp_chat_arrow->setVisible(chatbox_always_show);
+    ui_vp_showname->setVisible(chatbox_always_show);
     ui_vp_objection->set_static_duration(shout_static_time);
     ui_vp_objection->set_max_duration(shout_max_time);
     QString filename;
@@ -3289,6 +3327,7 @@ void Courtroom::initialize_chatbox()
   }
   else // Aw yeah dude do some showname magic
   {
+    ui_vp_showname->setVisible(true);
     if (!ui_vp_chatbox->set_image("chat", p_misc))
       ui_vp_chatbox->set_image("chatbox", p_misc);
 
@@ -3482,6 +3521,10 @@ void Courtroom::handle_ic_speaking()
       filename = "prosecution_speedlines";
     else
       filename = "defense_speedlines";
+
+    // We're zooming, so hide the pair character and ignore pair offsets. This ain't about them.
+    ui_vp_sideplayer_char->hide();
+    ui_vp_player_char->move_and_center(0,0);
     ui_vp_speedlines->load_image(filename, m_chatmessage[CHAR_NAME], ao_app->get_chat(m_chatmessage[CHAR_NAME]));
   }
 
