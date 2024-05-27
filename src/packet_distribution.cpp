@@ -712,7 +712,7 @@ void AOApplication::server_packet_received(AOPacket *p_packet)
   else if (header == "TIN") {
     if (courtroom_constructed && f_contents.size() == 2) {
       int id = f_contents.at(0).toInt();
-      qint64 timer_value = f_contents.at(1).toLongLong();
+      qint64 timer_interval = f_contents.at(1).toLongLong();
       w_courtroom->interval_clock(id, timer_interval);
     }
   }
