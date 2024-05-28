@@ -221,6 +221,10 @@ public:
   QString username() const;
   void setUsername(QString value);
 
+  // Returns max multiple pair the user may have set in config.ini.
+  int max_multiple_pair() const;
+  void set_max_multiple_pair(int value);
+
   // Returns the audio device used for the client.
   QString audioOutputDevice() const;
   void setAudioOutputDevice(QString value);
