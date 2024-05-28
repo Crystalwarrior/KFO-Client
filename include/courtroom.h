@@ -229,6 +229,9 @@ public:
   void list_music();
   void list_areas();
 
+  // player list build function
+  void set_player_list(QStringList players);
+
   // Debug log (formerly master server chat log)
   void debug_message_handler(QtMsgType type, const QMessageLogContext &context,
                              const QString &msg);
@@ -769,6 +772,7 @@ private:
   QListWidget *ui_mute_list;
   QTreeWidget *ui_area_list;
   QTreeWidget *ui_music_list;
+  QTreeWidget *ui_player_list;
 
   ScrollText *ui_music_name;
   InterfaceLayer *ui_music_display;
