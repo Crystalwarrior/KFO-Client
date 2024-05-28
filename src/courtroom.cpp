@@ -92,6 +92,14 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   ui_vp_thirdplayer_char->setObjectName("ui_vp_thirdplayer_char");
   ui_vp_thirdplayer_char->masked = false;
   ui_vp_thirdplayer_char->hide();
+  max_pairs = Options::getInstance().max_multiple_pair();
+  for (int i = 0; i < max_pairs; i++) {
+    CharLayer *ui_vp_player_pair_char = new CharLayer(ui_viewport, ao_app);
+    ui_vp_player_pair_char->setObjectName("ui_vp_player_pair_char_" + QVariant(i).toString());
+    ui_vp_player_pair_char->masked = false;
+    ui_vp_player_pair_char->hide();
+    ui_vp_multiple_pair.append(ui_vp_player_pair_char);
+  }
   
   ui_vp_desk = new BackgroundLayer(ui_viewport, ao_app);
   ui_vp_desk->setObjectName("ui_vp_desk");
@@ -1037,6 +1045,12 @@ void Courtroom::set_widgets()
   ui_vp_thirdplayer_char->move_and_center(0, 0);
   ui_vp_thirdplayer_char->combo_resize(ui_viewport->width(),
                                       ui_viewport->height());
+
+  for (int i = 0; i < ui_vp_multiple_pair.size(); i++) {
+    ui_vp_multiple_pair.at(i)->move_and_center(0, 0);
+    ui_vp_multiple_pair.at(i)->combo_resize(ui_viewport->width(),
+                                         ui_viewport->height());
+  }
   
   // the AO2 desk element
   ui_vp_desk->move_and_center(0, 0);
@@ -1696,6 +1710,9 @@ void Courtroom::set_background(QString p_background, bool display)
 
     ui_vp_sideplayer_char->stop();
     ui_vp_thirdplayer_char->stop();
+    for (int i = 0; i < ui_vp_multiple_pair.size(); i++) {
+      ui_vp_multiple_pair.at(i)->stop();
+    }
     ui_vp_effect->stop();
     ui_vp_message->hide();
     ui_vp_chatbox->setVisible(chatbox_always_show);
@@ -3024,6 +3041,77 @@ void Courtroom::display_third_pair_character(QString third_charid, QString third
     }
 }
 
+void Courtroom::display_multiple_pair_character(QString chars_id, QString chars_offset)
+{
+    // If pair information exists
+    if (!chars_id.isEmpty()) {
+      QStringList Chars = chars_id.split("#");
+      QStringList Offsets = chars_offset.split("#");
+      QStringList Flips = m_chatmessage[CHARS_FLIP].split("#");
+      QStringList Emotes = m_chatmessage[CHARS_EMOTE].split("#");
+      QStringList Names = m_chatmessage[CHARS_NAME].split("#");
+      // Initialize the "ok" bool check to see if the toInt conversion succeeded
+      for (int i = 0; i < Chars.size() && i < ui_vp_multiple_pair.size(); i++) {
+        QString pair_char_id = Chars.at(i);
+        QString pair_char_offset = Offsets.at(i);
+        bool ok;
+        // Grab the charid of the pair
+        int charid = pair_char_id.split("^")[0].toInt(&ok);
+        // If the charid is an int and is valid...
+        if (ok && charid > -1) {
+          // Show the pair character
+          ui_vp_multiple_pair.at(i)->show();
+          // Obtain the offsets, splitting it up by & char
+          QStringList offsets = pair_char_offset.split("&");
+          int offset_x;
+          int offset_y;
+          // If we only got one number...
+          if (offsets.length() <= 1) {
+            // That's just the X offset. Make Y offset 0.
+            offset_x = pair_char_offset.toInt();
+            offset_y = 0;
+          }
+          else {
+            // We got two numbers, set x and y offsets!
+            offset_x = offsets[0].toInt();
+            offset_y = offsets[1].toInt();
+          }
+          // Move pair character according to the offsets
+          ui_vp_multiple_pair.at(i)->move(ui_viewport->width() * offset_x / 100,
+                                     ui_viewport->height() * offset_y / 100);
+          // Split the charid according to the ^ to determine if we have
+          // "ordering" info
+          QStringList args = pair_char_id.split("^");
+          if (args.size() >1) // This ugly workaround is so we don't make an extra packet just
+               // for this purpose. Rewrite pairing when?
+          {    // Change the order of appearance based on the pair order variable
+            int order = args.at(1).toInt();
+            switch (order) {
+              case 0: // Our character is in front
+                ui_vp_multiple_pair.at(i)->stackUnder(ui_vp_player_char);
+                break;
+              case 1: // Our character is behind
+                ui_vp_player_char->stackUnder(ui_vp_multiple_pair.at(i));
+                break;
+              default:
+                break;
+            }
+          }
+          // Flip the pair character
+          if (ao_app->flipping_supported && Flips.at(i).toInt() == 1)
+            ui_vp_thirdplayer_char->set_flipped(true);
+          else
+            ui_vp_thirdplayer_char->set_flipped(false);
+
+          // Play the other pair character's idle animation
+          QString filename = "(a)" + Emotes.at(i);
+          ui_vp_multiple_pair.at(i)->set_play_once(false);
+          ui_vp_multiple_pair.at(i)->load_image(filename, Names.at(i), 0, false);
+        }
+      }
+    }
+}
+
 void Courtroom::handle_emote_mod(int emote_mod, bool p_immediate)
 {
   // Deal with invalid emote modifiers
@@ -3088,12 +3176,17 @@ void Courtroom::handle_ic_message()
     ui_vp_sideplayer_char->move(0, 0);
     ui_vp_thirdplayer_char->stop();
     ui_vp_thirdplayer_char->move(0, 0);
+    for (int i = 0; i < ui_vp_multiple_pair.size(); i++) {
+      ui_vp_multiple_pair.at(i)->stop();
+      ui_vp_multiple_pair.at(i)->move(0, 0);
+    }
     
     // If the emote_mod is not zooming
     if (emote_mod != ZOOM && emote_mod != PREANIM_ZOOM) {
       // Display the pair character
       display_pair_character(m_chatmessage[OTHER_CHARID], m_chatmessage[OTHER_OFFSET]);
       display_third_pair_character(m_chatmessage[THIRD_CHARID], m_chatmessage[THIRD_OFFSET]);
+      display_multiple_pair_character(m_chatmessage[CHARS_ID], m_chatmessage[CHARS_OFFSET]);
     }
 
     // Parse the emote_mod part of the chat message
@@ -3130,8 +3223,14 @@ void Courtroom::do_screenshake()
       screenshake_animation_group->duration());
   screenshake_animation_group->clear();
 
-  const QList<QWidget *> &affected_list = {ui_vp_background, ui_vp_player_char, ui_vp_crossfade_char,
+  QList<QWidget *> affect_list = {ui_vp_background, ui_vp_player_char, ui_vp_crossfade_char,
                                     ui_vp_sideplayer_char, ui_vp_thirdplayer_char, ui_vp_chatbox};
+
+  for (int i = 0; i < ui_vp_multiple_pair.size(); i++) {
+    affect_list.append(ui_vp_multiple_pair.at(i));
+  }
+
+  const QList<QWidget *> &affected_list = affect_list;
 
   // I would prefer if this was its own "shake" function to be honest.
   for (QWidget *ui_element : affected_list) {
@@ -4054,6 +4153,9 @@ void Courtroom::play_preanim(bool immediate)
     case DESK_EMOTE_ONLY_EX:
       ui_vp_sideplayer_char->hide();
       ui_vp_thirdplayer_char->hide();
+      for (int i = 0; i < ui_vp_multiple_pair.size(); i++) {
+        ui_vp_multiple_pair.at(i)->hide();
+      }
       ui_vp_player_char->move_and_center(0, 0);
       [[fallthrough]];
     case DESK_EMOTE_ONLY:
@@ -4113,6 +4215,9 @@ void Courtroom::start_chat_ticking()
     case DESK_PRE_ONLY_EX:
       ui_vp_sideplayer_char->hide();
       ui_vp_thirdplayer_char->hide();
+      for (int i = 0; i < ui_vp_multiple_pair.size(); i++) {
+        ui_vp_multiple_pair.at(i)->hide();
+      }
       ui_vp_player_char->move_and_center(0, 0);
       [[fallthrough]];
     case DESK_PRE_ONLY:
