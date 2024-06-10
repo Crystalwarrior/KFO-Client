@@ -32,9 +32,7 @@ void AOTextArea::append_chatmessage(QString p_name, QString p_message,
     p_message += " ";
   }
 
-  QString result = p_message.toHtmlEscaped()
-                       .replace("\n", "<br>")
-                       .replace(url_parser_regex, "<a href='\\1'>\\1</a>");
+  QString result = p_message.replace("\n", "<br>").replace(url_parser_regex, "<a href='\\1'>\\1</a>");
 
   if (!p_color.isEmpty()) {
     result = "<font color=" + p_color + ">" + result + "</font>";
