@@ -2113,12 +2113,20 @@ void Courtroom::set_player_list(QStringList players)
 {
   ui_player_list->clear();
   QBrush player_list_brush(ao_app->get_color("player_list_color", "courtroom_design.ini"));
+  int player_index = 0;
   for (QString &player : players) {
-    QString player_char_name = player.split('"')[1];
-    QTreeWidgetItem *treeItem = new QTreeWidgetItem(ui_player_list);
-    treeItem->setText(0, player);
-    treeItem->setIcon(0, QIcon(ao_app->get_image_suffix(ao_app->get_character_path(player_char_name, "char_icon"))));
-    treeItem->setBackground(0, player_list_brush);
+    QString player_char_name = ""
+    if (player.split('"').size() > 1) {
+      player_char_name = player.split('"')[1];
+    }
+    QTreeWidgetItem *treeItem = ui_player_list->topLevelItem(player_index);
+    if (treeItem == nullptr) {
+      treeItem = new QTreeWidgetItem(ui_player_list);
+    }
+    treeItem->setText(1, player);
+    treeItem->setIcon(1, QIcon(ao_app->get_image_suffix(ao_app->get_character_path(player_char_name, "char_icon"))));
+    treeItem->setBackground(1, player_list_brush);
+    ++player_index;
   }
 }
 
