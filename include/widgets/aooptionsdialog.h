@@ -63,6 +63,7 @@ private:
   QCheckBox *ui_instant_objection_cb;
   QSpinBox *ui_text_crawl_spinbox;
   QSpinBox *ui_chat_ratelimit_spinbox;
+  QSpinBox *ui_max_multiple_pair_spinbox;
   QFrame *ui_log_names_divider;
   QLineEdit *ui_username_textbox;
   QCheckBox *ui_showname_cb;

@@ -285,6 +285,8 @@ public:
 
   void display_third_pair_character(QString third_charid, QString third_offset);
 
+  void display_multiple_pair_character(QString chars_id, QString chars_offset);
+
   // Handle the emote modifier value and proceed through the logic accordingly.
   void handle_emote_mod(int emote_mod, bool p_immediate);
 
@@ -454,6 +456,9 @@ private:
   // RP clock
   int m_current_clock = 0;
 
+  // max users on the same pos during multiple pair
+  int max_pairs = 10;
+
   QVector<char_type> char_list;
   QVector<evi_type> evidence_list;
   QVector<QString> music_list;
@@ -561,7 +566,7 @@ private:
 
   // Minumum and maximum number of parameters in the MS packet
   static const int MS_MINIMUM = 15;
-  static const int MS_MAXIMUM = 35;
+  static const int MS_MAXIMUM = 40;
   QString m_chatmessage[MS_MAXIMUM];
 
   QString previous_ic_message = "";
@@ -750,6 +755,7 @@ private:
   CharLayer *ui_vp_crossfade_char;
   CharLayer *ui_vp_sideplayer_char;
   CharLayer *ui_vp_thirdplayer_char;
+  QList<CharLayer *> ui_vp_multiple_pair;
   BackgroundLayer *ui_vp_desk;
   AOEvidenceDisplay *ui_vp_evidence_display;
   AOImage *ui_vp_chatbox;

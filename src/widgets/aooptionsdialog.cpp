@@ -406,6 +406,7 @@ void AOOptionsDialog::setupUI()
   FROM_UI(QCheckBox, instant_objection_cb)
   FROM_UI(QSpinBox, text_crawl_spinbox)
   FROM_UI(QSpinBox, chat_ratelimit_spinbox)
+  FROM_UI(QSpinBox, max_multiple_pair_spinbox)
   FROM_UI(QLineEdit, username_textbox)
   FROM_UI(QCheckBox, showname_cb)
   FROM_UI(QLineEdit, default_showname_textbox)
@@ -447,6 +448,9 @@ void AOOptionsDialog::setupUI()
   registerOption<QSpinBox, int>("chat_ratelimit_spinbox",
                                 &Options::chatRateLimit,
                                 &Options::setChatRateLimit);
+    registerOption<QSpinBox, int>("max_multiple_pair_spinbox",
+                                &Options::max_multiple_pair,
+                                &Options::set_max_multiple_pair);
   registerOption<QLineEdit, QString>("username_textbox", &Options::username,
                                      &Options::setUsername);
   registerOption<QCheckBox, bool>("showname_cb",

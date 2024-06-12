@@ -262,6 +262,16 @@ void Options::setUsername(QString value)
   config.setValue("default_username", value);
 }
 
+int Options::max_multiple_pair() const
+{
+  return config.value("max_multiple_pair", 10).toInt();
+}
+
+void Options::set_max_multiple_pair(int value)
+{
+  config.setValue("max_multiple_pair", value);
+}
+
 QString Options::shownameOnJoin() const
 {
   return config.value("default_showname", "").toString();
