@@ -3045,11 +3045,11 @@ void Courtroom::display_multiple_pair_character(QString chars_id, QString chars_
 {
     // If pair information exists
     if (!chars_id.isEmpty()) {
-      QStringList Chars = chars_id.split("#");
-      QStringList Offsets = chars_offset.split("#");
-      QStringList Flips = m_chatmessage[CHARS_FLIP].split("#");
-      QStringList Emotes = m_chatmessage[CHARS_EMOTE].split("#");
-      QStringList Names = m_chatmessage[CHARS_NAME].split("#");
+      QStringList Chars = chars_id.split("<and>");
+      QStringList Offsets = chars_offset.split("<and>");
+      QStringList Flips = m_chatmessage[CHARS_FLIP].split("<and>");
+      QStringList Emotes = m_chatmessage[CHARS_EMOTE].split("<and>");
+      QStringList Names = m_chatmessage[CHARS_NAME].split("<and>");
       // Initialize the "ok" bool check to see if the toInt conversion succeeded
       for (int i = 0; i < Chars.size() && i < ui_vp_multiple_pair.size(); i++) {
         QString pair_char_id = Chars.at(i);
