@@ -709,6 +709,11 @@ void AOApplication::server_packet_received(AOPacket *p_packet)
       w_courtroom->format_clock(id, time_format, timer_value);
     }
   }
+  else if (header == "PL") {
+    if (courtroom_constructed && f_contents.size() > 0) {
+      w_courtroom->set_player_list(f_contents);
+    }
+  }
   else if (header == "CHECK") {
     if (!courtroom_constructed)
       goto end;
