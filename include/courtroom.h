@@ -311,6 +311,9 @@ public:
                       int color = 0, bool selfname = false, QDateTime timestamp = QDateTime::currentDateTime(),
                       bool ghost = false);
 
+  void append_pinned_text(QString p_text, QString p_name = "", QString action = "", int color = 0, bool selfname = false, QDateTime timestamp = QDateTime::currentDateTime());
+  void clear_pinned_message();
+
   // clear sent messages that appear on the IC log but haven't been delivered
   // yet to other players
   void pop_ic_ghost();
@@ -762,6 +765,7 @@ private:
   SplashLayer *ui_vp_objection;
 
   QTextEdit *ui_ic_chatlog;
+  QTextEdit *ui_ic_chatlog_pinned;
 
   AOTextArea *ui_debug_log;
   AOTextArea *ui_server_chatlog;
@@ -840,6 +844,7 @@ private:
   AOButton *ui_call_mod;
   AOButton *ui_settings;
   AOButton *ui_switch_area_music;
+  AOButton *ui_switch_logs;
 
   QCheckBox *ui_pre;
   QCheckBox *ui_flip;
@@ -1129,6 +1134,7 @@ private slots:
   void on_spectator_clicked();
 
   void on_switch_area_music_clicked();
+  void on_switch_logs_clicked();
 
   void on_application_state_changed(Qt::ApplicationState state);
 
