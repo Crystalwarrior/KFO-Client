@@ -436,6 +436,17 @@ void AOApplication::server_packet_received(AOPacket *p_packet)
       w_courtroom->chatmessage_enqueue(p_packet->get_contents());
     }
   }
+  else if (header == "PM") {
+    if (courtroom_constructed && courtroom_loaded) {
+      w_courtroom->append_pinned_text(f_contents.at(0), f_contents.at(1),
+                                      f_contents.at(2));
+    }
+  }
+  else if (header == "CPM") {
+    if (courtroom_constructed && courtroom_loaded) {
+      w_courtroom->clear_pinned_message();
+    }
+  }
   else if (header == "MC") {
     if (courtroom_constructed && courtroom_loaded)
     {
