@@ -153,6 +153,11 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   ui_ic_chatlog->setReadOnly(true);
   ui_ic_chatlog->setObjectName("ui_ic_chatlog");
 
+  ui_ic_chatlog_pinned = new QTextEdit(this);
+  ui_ic_chatlog_pinned->setReadOnly(true);
+  ui_ic_chatlog_pinned->setObjectName("ui_ic_chatlog_pinned");
+  ui_ic_chatlog_pinned->hide();
+
   log_maximum_blocks = Options::getInstance().maxLogSize();
   log_goes_downwards = Options::getInstance().logDirectionDownwards();
   log_colors = Options::getInstance().colorLogEnabled();
@@ -335,6 +340,9 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
 
   ui_switch_area_music = new AOButton(this, ao_app);
   ui_switch_area_music->setObjectName("ui_switch_area_music");
+
+  ui_switch_logs = new AOButton(this, ao_app);
+  ui_switch_logs->setObjectName("ui_switch_logs");
 
   ui_pre = new QCheckBox(this);
   ui_pre->setText(tr("Pre"));
@@ -834,6 +842,8 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   connect(ui_settings, &AOButton::clicked, this, &Courtroom::on_settings_clicked);
   connect(ui_switch_area_music, &AOButton::clicked, this,
           &Courtroom::on_switch_area_music_clicked);
+  connect(ui_switch_logs, &AOButton::clicked, this,
+          &Courtroom::on_switch_logs_clicked);
 
   connect(ui_pre, &AOButton::clicked, this, &Courtroom::on_pre_clicked);  
   connect(ui_flip, &AOButton::clicked, this, &Courtroom::on_flip_clicked);
@@ -1085,6 +1095,12 @@ void Courtroom::set_widgets()
   ui_ic_chatlog->setPlaceholderText(log_goes_downwards ? "▼ " + tr("Log goes down") + " ▼"
                                                        : "▲ " + tr("Log goes up") + " ▲");
 
+  set_size_and_pos(ui_ic_chatlog_pinned, "ic_chatlog");
+  ui_ic_chatlog_pinned->setFrameShape(QFrame::NoFrame);
+  ui_ic_chatlog_pinned->setPlaceholderText(log_goes_downwards
+                                        ? "▼📌 " + tr("Pinned Message") + " 📌▼"
+                                        : "▲📌 " + tr("Pinned Message") + " 📌▲");
+
   set_size_and_pos(ui_debug_log, "ms_chatlog"); // Old name, still use it to not break compatibility
   ui_debug_log->setFrameShape(QFrame::NoFrame);
 
@@ -1331,6 +1347,11 @@ void Courtroom::set_widgets()
   ui_switch_area_music->set_image("switch_area_music");
   ui_switch_area_music->setToolTip(tr("Switch between Areas and Music lists"));
 
+  set_size_and_pos(ui_switch_logs, "switch_logs");
+  ui_switch_logs->setText(tr("L/P"));
+  ui_switch_logs->set_image("switch_logs");
+  ui_switch_logs->setToolTip(tr("Switch between Log message chat and Log pinned chat"));
+
   set_size_and_pos(ui_pre, "pre");
   ui_pre->setText(tr("Preanim"));
   ui_pre->setToolTip(
@@ -1476,6 +1497,7 @@ void Courtroom::set_fonts(QString p_char)
   set_font(ui_vp_showname, "", "showname", p_char);
   set_font(ui_vp_message, "", "message", p_char);
   set_font(ui_ic_chatlog, "", "ic_chatlog", p_char);
+  set_font(ui_ic_chatlog_pinned, "", "ic_chatlog_pinned", p_char);
   set_font(ui_debug_log, "", "debug_log", p_char);
   set_font(ui_server_chatlog, "", "server_chatlog", p_char);
   set_font(ui_music_list, "", "music_list", p_char);
@@ -4007,6 +4029,157 @@ void Courtroom::append_ic_text(QString p_text, QString p_name, QString p_action,
         log_goes_downwards ? ui_ic_chatlog->verticalScrollBar()->maximum() : 0);
   }
 }
+
+void Courtroom::append_pinned_text(QString p_text, QString p_name, QString p_action, int color, bool selfname, QDateTime timestamp)
+{
+  QColor chatlog_color = ao_app->get_color("ic_chatlog_color", "courtroom_fonts.ini");
+  QTextCharFormat bold;
+  QTextCharFormat normal;
+  QTextCharFormat italics;
+  QTextCharFormat own_name;
+  QTextCharFormat other_name;
+  QTextCharFormat timestamp_format;
+  QTextCharFormat selftimestamp_format;
+  QTextBlockFormat format;
+  bold.setFontWeight(QFont::Bold);
+  normal.setFontWeight(QFont::Normal);
+  italics.setFontItalic(true);
+  own_name.setFontWeight(QFont::Bold);
+  own_name.setForeground(
+      ao_app->get_color("ic_chatlog_selfname_color", "courtroom_fonts.ini"));
+  other_name.setFontWeight(QFont::Bold);
+  other_name.setForeground(
+      ao_app->get_color("ic_chatlog_showname_color", "courtroom_fonts.ini"));
+  timestamp_format.setForeground(
+      ao_app->get_color("ic_chatlog_timestamp_color", "courtroom_fonts.ini"));
+  selftimestamp_format.setForeground(ao_app->get_color(
+      "ic_chatlog_selftimestamp_color", "courtroom_fonts.ini"));
+  format.setTopMargin(log_margin);
+  const QTextCursor old_cursor = ui_ic_chatlog_pinned->textCursor();
+  const int old_scrollbar_value = ui_ic_chatlog_pinned->verticalScrollBar()->value();
+  const bool need_newline = !ui_ic_chatlog_pinned->document()->isEmpty();
+  const int scrollbar_target_value =
+      log_goes_downwards ? ui_ic_chatlog_pinned->verticalScrollBar()->maximum()
+                         : ui_ic_chatlog_pinned->verticalScrollBar()->minimum();
+
+
+  ui_ic_chatlog_pinned->moveCursor(log_goes_downwards ? QTextCursor::End
+                                               : QTextCursor::Start);
+
+  // Only prepend with newline if log goes downwards
+  if (log_goes_downwards && need_newline) {
+    ui_ic_chatlog_pinned->textCursor().insertBlock(format);
+  }
+
+  // Timestamp if we're doing that meme
+  if (log_timestamp) {
+    // Format the timestamp
+    QTextCharFormat format = selfname ? selftimestamp_format : timestamp_format;
+    if (timestamp.isValid()) {
+      ui_ic_chatlog_pinned->textCursor().insertText(
+          "[" + timestamp.toString(log_timestamp_format) + "] ", format);
+    }
+    else {
+      qCritical() << "could not insert invalid timestamp" << timestamp;
+    }
+  }
+
+  // Format the name of the actor
+  QTextCharFormat name_format = selfname ? own_name : other_name;
+  ui_ic_chatlog_pinned->textCursor().insertText("📌" + p_name + "📌", name_format);
+  // Special case for stopping the music
+  if (p_action == tr("has stopped the music")) {
+    ui_ic_chatlog_pinned->textCursor().insertText(" " + p_action + ".", normal);
+  }
+  // Make shout text bold
+  else if (p_action == tr("shouts") && log_ic_actions) {
+    ui_ic_chatlog_pinned->textCursor().insertText(" " + p_action + " ", normal);
+    if (log_colors) {
+      ui_ic_chatlog_pinned->textCursor().insertHtml(
+          "<b>" +
+          filter_ic_text(p_text, true, -1, 0)
+              .replace("$c0", chatlog_color.name(QColor::HexArgb)) +
+          "</b>");
+    }
+    else
+      ui_ic_chatlog_pinned->textCursor().insertText(" " + p_text, italics);
+  }
+  // If action not blank:
+  else if (p_action != "" && log_ic_actions) {
+    // Format the action in normal
+    ui_ic_chatlog_pinned->textCursor().insertText(" " + p_action, normal);
+    if (log_newline)
+      // For some reason, we're forced to use <br> instead of the more sensible
+      // \n. Why? Because \n is treated as a new Block instead of a soft newline
+      // within a paragraph!
+      ui_ic_chatlog_pinned->textCursor().insertHtml("<br>");
+    else
+      ui_ic_chatlog_pinned->textCursor().insertText(": ", normal);
+    // Format the result in italics
+    ui_ic_chatlog->textCursor().insertText(p_text + ".", italics);
+  }
+  else {
+    if (log_newline) {
+      // For some reason, we're forced to use <br> instead of the more sensible
+      // \n. Why? Because \n is treated as a new Block instead of a soft newline
+      // within a paragraph!
+      ui_ic_chatlog_pinned->textCursor().insertHtml("<br>");
+    }
+    else {
+      ui_ic_chatlog_pinned->textCursor().insertText(": ", normal);
+    }
+    // Format the result according to html
+    if (log_colors) {
+      QString p_text_filtered = filter_ic_text(p_text, true, -1, color);
+      p_text_filtered =
+          p_text_filtered.replace("$c0", chatlog_color.name(QColor::HexArgb));
+      for (int c = 1; c < max_colors; ++c) {
+        QColor color_result = default_color_rgb_list.at(c);
+        p_text_filtered = p_text_filtered.replace(
+            "$c" + QString::number(c), color_result.name(QColor::HexArgb));
+      }
+      ui_ic_chatlog_pinned->textCursor().insertHtml(p_text_filtered);
+    }
+    else {
+      ui_ic_chatlog_pinned->textCursor().insertText(filter_ic_text(p_text, false),
+                                             normal);
+    }
+  }
+
+  // Only append with newline if log goes upwards
+  if (!log_goes_downwards && need_newline) {
+    ui_ic_chatlog_pinned->textCursor().insertBlock(format);
+  }
+
+  // If we got too many blocks in the current log, delete some.
+  while (ui_ic_chatlog_pinned->document()->blockCount() > log_maximum_blocks &&
+         log_maximum_blocks > 0) {
+    QTextCursor temp_curs = ui_ic_chatlog_pinned->textCursor();
+    temp_curs.movePosition(log_goes_downwards ? QTextCursor::Start
+                                              : QTextCursor::End);
+    temp_curs.select(QTextCursor::BlockUnderCursor);
+    temp_curs.removeSelectedText();
+    if (log_goes_downwards)
+      temp_curs.deleteChar();
+    else
+      temp_curs.deletePreviousChar();
+  }
+
+  // Finally, scroll the scrollbar to the correct position.
+  if (old_cursor.hasSelection() ||
+      old_scrollbar_value != scrollbar_target_value) {
+    // The user has selected text or scrolled away from the bottom: maintain
+    // position.
+    ui_ic_chatlog_pinned->setTextCursor(old_cursor);
+    ui_ic_chatlog_pinned->verticalScrollBar()->setValue(old_scrollbar_value);
+  }
+  else {
+    ui_ic_chatlog_pinned->verticalScrollBar()->setValue(
+        log_goes_downwards ? ui_ic_chatlog->verticalScrollBar()->maximum() : 0);
+  }
+}
+
+void Courtroom::clear_pinned_message() { ui_ic_chatlog_pinned->clear(); }
 
 void Courtroom::pop_ic_ghost()
 {
@@ -6649,6 +6822,18 @@ void Courtroom::on_switch_area_music_clicked()
   }
   on_music_search_edited(ui_music_search->text());
 
+}
+
+void Courtroom::on_switch_logs_clicked()
+{
+  if (ui_ic_chatlog->isHidden()) {
+    ui_ic_chatlog->show();
+    ui_ic_chatlog_pinned->hide();
+  }
+  else {
+    ui_ic_chatlog->hide();
+    ui_ic_chatlog_pinned->show();
+  }
 }
 
 void Courtroom::ping_server()
