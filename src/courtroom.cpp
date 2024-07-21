@@ -926,10 +926,10 @@ void Courtroom::set_courtroom_size()
     m_courtroom_height = f_courtroom.height;
   }
   this->setFixedSize(m_courtroom_width, m_courtroom_height);
-
   ui_background->move(0, 0);
   ui_background->resize(m_courtroom_width, m_courtroom_height);
   ui_background->set_image("courtroombackground");
+  set_menu_bar();
 }
 
 void Courtroom::set_mute_list()
@@ -1493,7 +1493,6 @@ void Courtroom::set_fonts(QString p_char)
     set_font(ui_clock[i], "", "clock_" + QString::number(i), p_char);
 
   set_stylesheets();
-  set_menu_bar();
 }
 
 void Courtroom::set_font(QWidget *widget, QString class_name,
