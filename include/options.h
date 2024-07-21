@@ -55,6 +55,9 @@ public:
   QString theme() const;
   void setTheme(QString value);
 
+  int themeScalingFactor() const;
+  void setThemeScalingFactor(int value);
+
   // Returns the value of oocname in config.ini
   QString oocName() const;
   void setOocName(QString value);
