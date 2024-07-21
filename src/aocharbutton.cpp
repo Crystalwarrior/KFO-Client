@@ -12,8 +12,8 @@ AOCharButton::AOCharButton(QWidget *parent, AOApplication *p_ao_app, int x_pos,
 
   taken = is_taken;
 
-  int size = 60 * Options::getInstance().themeScalingFactor();
-  int selector_size = 62 * Options::getInstance().themeScalingFactor();
+  int size = static_cast<int>(60 * Options::getInstance().themeScalingFactor());
+  int selector_size = static_cast<int>(62 * Options::getInstance().themeScalingFactor());
 
   this->resize(size, size);
   this->move(x_pos, y_pos);
@@ -32,7 +32,7 @@ AOCharButton::AOCharButton(QWidget *parent, AOApplication *p_ao_app, int x_pos,
 
   ui_selector = new AOImage(parent, ao_app, true);
   ui_selector->resize(selector_size, selector_size);
-  int offset = Options::getInstance().themeScalingFactor();
+  int offset = static_cast<int>(Options::getInstance().themeScalingFactor());
   ui_selector->move(x_pos - offset, y_pos - offset);
   ui_selector->set_image("char_selector");
   ui_selector->setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -87,7 +87,7 @@ void AOCharButton::enterEvent(QEvent *e)
 void AOCharButton::enterEvent(QEnterEvent *e)
 #endif
 {
-  int offset = Options::getInstance().themeScalingFactor();
+  int offset = static_cast<int>(Options::getInstance().themeScalingFactor());
   ui_selector->move(this->x() - offset, this->y() - offset);
   ui_selector->raise();
   ui_selector->show();

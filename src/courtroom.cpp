@@ -879,7 +879,6 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   });
 
   set_widgets();
-
   set_char_select();
 }
 
@@ -920,21 +919,15 @@ void Courtroom::set_courtroom_size()
 
   if (f_courtroom.width < 0 || f_courtroom.height < 0) {
     qWarning() << "did not find courtroom width or height in " << filename;
-
-    this->setFixedSize(714, 668);
-  }
-  else {
+    m_courtroom_width = 714;
+    m_courtroom_height = 668;
+  } else {
     m_courtroom_width = f_courtroom.width;
     m_courtroom_height = f_courtroom.height;
-
-    if (Options::getInstance().menuBarLocked()) {
-      this->setFixedSize(f_courtroom.width, f_courtroom.height + menu_bar->height());
-      ui_background->move(0, menu_bar->height());
-    } else {
-      this->setFixedSize(f_courtroom.width, f_courtroom.height);
-      ui_background->move(0, 0);
-    }
   }
+  this->setFixedSize(m_courtroom_width, m_courtroom_height);
+
+  ui_background->move(0, 0);
   ui_background->resize(m_courtroom_width, m_courtroom_height);
   ui_background->set_image("courtroombackground");
 }
@@ -972,6 +965,15 @@ void Courtroom::set_pair_list()
 
   for (const QString &i_name : sorted_pair_list) {
     ui_pair_list->addItem(i_name);
+  }
+}
+
+void Courtroom::set_menu_bar()
+{
+  menu_bar->adjustSize();
+  if (Options::getInstance().menuBarLocked()) {
+    this->setFixedSize(m_courtroom_width, m_courtroom_height + menu_bar->height());
+    ui_background->move(0, menu_bar->height());
   }
 }
 
@@ -1474,7 +1476,7 @@ void Courtroom::set_widgets()
 void Courtroom::set_fonts(QString p_char)
 {
   QFont new_font = ao_app->default_font;
-  int new_font_size = new_font.pointSize() * Options::getInstance().themeScalingFactor();
+  int new_font_size = static_cast<int>(new_font.pointSize() * Options::getInstance().themeScalingFactor());
   new_font.setPointSize(new_font_size);
   ao_app->setFont(new_font);
 
@@ -1491,6 +1493,7 @@ void Courtroom::set_fonts(QString p_char)
     set_font(ui_clock[i], "", "clock_" + QString::number(i), p_char);
 
   set_stylesheets();
+  set_menu_bar();
 }
 
 void Courtroom::set_font(QWidget *widget, QString class_name,
@@ -1500,7 +1503,7 @@ void Courtroom::set_font(QWidget *widget, QString class_name,
   QString design_file = "courtroom_fonts.ini";
   if (f_pointsize <= 0)
     f_pointsize =
-        ao_app->get_design_element(p_identifier, design_file, ao_app->get_chat(p_char)).toInt() * Options::getInstance().themeScalingFactor();
+        static_cast<int>(ao_app->get_design_element(p_identifier, design_file, ao_app->get_chat(p_char)).toInt() * Options::getInstance().themeScalingFactor());
   if (font_name == "")
     font_name =
         ao_app->get_design_element(p_identifier + "_font", design_file, ao_app->get_chat(p_char));
@@ -1594,10 +1597,6 @@ void Courtroom::set_size_and_pos(QWidget *p_widget, QString p_identifier, QStrin
     p_widget->hide();
   }
   else {
-    int menuBarHeight = menu_bar->height();
-    if (menuBarHeight == 19)
-      menuBarHeight = 21;
-    // qDebug() << "Menu bar height: " << menuBarHeight;
     QSet<QString> unaffected = {"message", "showname", "back_to_lobby", "char_buttons",  // A list of widgets that shouldn't be affected
                               "char_select_left", "char_select_right", "spectator", "char_password", // by the menu bar repositioning
                                 "char_list", "char_taken", "char_passworded", "char_search",
@@ -1607,17 +1606,15 @@ void Courtroom::set_size_and_pos(QWidget *p_widget, QString p_identifier, QStrin
     // Is the menu bar locked? If so, move the widgets a few pixels down to give it space
     int y_position = design_ini_result.y;
 
-    // qDebug() << "Y position 1: " << y_position;
-    
     if (Options::getInstance().menuBarLocked()) { // Trust me, this will get redone
-       // Should the widget be unaffected? If not, we check if it's on the "affect" list. 
+       // Should the widget be unaffected? If not, we check if it's on the "affect" list.
        // If not, we let it pass as long as it doesn't start with "evidence_" (so relative positioning doesn't screw us over)
-       if (!unaffected.contains(p_identifier) && ( affect.contains(p_identifier) || !p_identifier.startsWith("evidence_") ))
-         y_position += menuBarHeight;
+       if (!unaffected.contains(p_identifier) && ( affect.contains(p_identifier) || !p_identifier.startsWith("evidence_") )) {
+         y_position += menu_bar->height();
+       }
     }
     p_widget->move(design_ini_result.x, y_position);
     p_widget->resize(design_ini_result.width, design_ini_result.height);
-    // qDebug() << "Y position 2: " << y_position;
   }
 }
 
@@ -1759,12 +1756,13 @@ void Courtroom::set_side(QString p_side)
       return;
     }
   }
-  if (selected_side == "")
+  if (selected_side == "") {
     // Reset index to 0
     ui_pos_dropdown->setCurrentIndex(0);
     // Unblock the signals so the element can be used for setting pos again
     ui_pos_dropdown->blockSignals(false);
     return;
+  }
   // We will only get there if we failed the last step
   ui_pos_dropdown->setEditText(selected_side);
   // Unblock the signals so the element can be used for setting pos again
@@ -2298,7 +2296,7 @@ void Courtroom::on_chat_return_pressed()
   if (action_narrator->isChecked()) {
     packet_contents.append("");
   } else {
-    packet_contents.append(ao_app->get_emote(current_char, current_emote)); 
+    packet_contents.append(ao_app->get_emote(current_char, current_emote));
   }
 
   QString f_message = ui_ic_chat_message->toPlainText().replace("\n", "\\n");
@@ -2515,10 +2513,11 @@ void Courtroom::reset_ui()
     custom_sfx = "";
   }
   // If sticky preanims is disabled
-  if (!Options::getInstance().clearPreOnPlayEnabled())
+  if (!Options::getInstance().clearPreOnPlayEnabled()) {
     // Turn off our Preanim checkbox
     ui_pre->setChecked(false);
     action_preanim->setChecked(false);
+  }
 }
 
 void Courtroom::chatmessage_enqueue(QStringList p_contents)
@@ -4271,10 +4270,11 @@ void Courtroom::chat_tick()
 
     // If we're not already waiting on the next message, start the timer. We could be overriden if there's an objection planned.
     int delay = Options::getInstance().textStayTime();
-    if (delay > 0 && !text_queue_timer->isActive())
+    if (delay > 0 && !text_queue_timer->isActive()) {
       if (m_chatmessage[ADDITIVE] != "0")
         delay = 1; // Makes Emote Queue less likely to desync
       text_queue_timer->start(delay);
+    }
 
     // if we have instant objections disabled, and queue is not empty, check if next message after this is an objection.
     if (!Options::getInstance().objectionSkipQueueEnabled() && chatmessage_queue.size() > 0)

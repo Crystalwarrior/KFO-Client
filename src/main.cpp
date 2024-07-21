@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
   main_app.default_font = main_font;
 
   QFont new_font = main_font;
-  int new_font_size = main_app.default_font.pointSize() * Options::getInstance().themeScalingFactor();
+  int new_font_size = static_cast<int>(main_app.default_font.pointSize() * Options::getInstance().themeScalingFactor());
   new_font.setPointSize(new_font_size);
   main_app.setFont(new_font);
 

@@ -153,7 +153,7 @@ void Courtroom::set_char_select_page()
   QPoint f_spacing =
       ao_app->get_button_spacing("char_button_spacing", "courtroom_design.ini");
 
-  int s_button_size = button_width * Options::getInstance().themeScalingFactor();
+  int s_button_size = static_cast<int>(button_width * Options::getInstance().themeScalingFactor());
 
   char_columns =
       ((ui_char_buttons->width() - s_button_size) / (f_spacing.x() + s_button_size)) +
@@ -291,7 +291,7 @@ void Courtroom::put_button_in_place(int starting, int chars_on_this_page)
   int y_mod_count = 0;
 
   int startout = starting;
-  int size = button_width * Options::getInstance().themeScalingFactor();
+  int size = static_cast<int>(button_width * Options::getInstance().themeScalingFactor());
   for (int n = starting; n < startout + chars_on_this_page; ++n) {
     int x_pos = (size + f_spacing.x()) * x_mod_count;
     int y_pos = (size + f_spacing.y()) * y_mod_count;

@@ -87,16 +87,16 @@ QString Options::theme() const
 
 void Options::setTheme(QString value) { config.setValue("theme", value); }
 
-int Options::themeScalingFactor() const
+double Options::themeScalingFactor() const
 {
-  int value = config.value("theme_scaling_factor", "1").toInt();
+  double value = config.value("theme_scaling_factor", "1").toDouble();
   if (value <= 0) {
     value = 1;
   }
   return value;
 }
 
-void Options::setThemeScalingFactor(int value) { config.setValue("theme_scaling_factor", value); }
+void Options::setThemeScalingFactor(double value) { config.setValue("theme_scaling_factor", value); }
 
 int Options::blipRate() const { return config.value("blip_rate", 2).toInt(); }
 

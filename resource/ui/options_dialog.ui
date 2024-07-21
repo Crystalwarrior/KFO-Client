@@ -39,7 +39,7 @@
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>-310</y>
+            <y>-427</y>
             <width>466</width>
             <height>750</height>
            </rect>
@@ -727,9 +727,15 @@
             </widget>
            </item>
            <item row="19" column="1">
-            <widget class="QSpinBox" name="theme_scaling_factor_sb">
-             <property name="value">
-              <number>1</number>
+            <widget class="QDoubleSpinBox" name="theme_scaling_factor_sb">
+             <property name="minimum">
+              <double>0.200000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>10.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.010000000000000</double>
              </property>
             </widget>
            </item>
