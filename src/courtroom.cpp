@@ -193,6 +193,15 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   ui_music_list->setUniformRowHeights(true);
   ui_music_list->setObjectName("ui_music_list");
 
+  ui_player_list = new QTreeWidget(this);
+  ui_player_list->setColumnCount(1);
+  ui_player_list->setHeaderHidden(true);
+  ui_player_list->header()->setStretchLastSection(false);
+  ui_player_list->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  ui_player_list->setContextMenuPolicy(Qt::CustomContextMenu);
+  ui_player_list->setUniformRowHeights(true);
+  ui_player_list->setObjectName("ui_player_list");
+
   ui_music_display = new InterfaceLayer(this, ao_app);
   ui_music_display->set_play_once(false);
   ui_music_display->set_cull_image(false);
@@ -1138,6 +1147,9 @@ void Courtroom::set_widgets()
   else
     ui_music_list->setIndentation(music_list_indentation.toInt());
 
+  set_size_and_pos(ui_player_list, "player_list");
+  ui_player_list->header()->setMinimumSectionSize(ui_player_list->width());
+
   QString music_list_animated = ao_app->get_design_element("music_list_animated", "courtroom_design.ini");
   ui_music_list->setAnimated(music_list_animated == "1" || music_list_animated.startsWith("true"));
 
@@ -1489,6 +1501,7 @@ void Courtroom::set_fonts(QString p_char)
   set_font(ui_debug_log, "", "debug_log", p_char);
   set_font(ui_server_chatlog, "", "server_chatlog", p_char);
   set_font(ui_music_list, "", "music_list", p_char);
+  set_font(ui_player_list, "", "player_list", p_char);
   set_font(ui_area_list, "", "area_list", p_char);
   set_font(ui_music_name, "", "music_name", p_char);
 
@@ -2098,6 +2111,27 @@ void Courtroom::list_areas()
 
   if (ui_music_search->text() != "") {
     on_music_search_edited(ui_music_search->text());
+  }
+}
+
+void Courtroom::set_player_list(QStringList players)
+{
+  ui_player_list->clear();
+  QBrush player_list_brush(ao_app->get_color("player_list_color", "courtroom_design.ini"));
+  int player_index = 0;
+  for (QString &player : players) {
+    QString player_char_name = ""
+    if (player.split('"').size() > 1) {
+      player_char_name = player.split('"')[1];
+    }
+    QTreeWidgetItem *treeItem = ui_player_list->topLevelItem(player_index);
+    if (treeItem == nullptr) {
+      treeItem = new QTreeWidgetItem(ui_player_list);
+    }
+    treeItem->setText(1, player);
+    treeItem->setIcon(1, QIcon(ao_app->get_image_suffix(ao_app->get_character_path(player_char_name, "char_icon"))));
+    treeItem->setBackground(1, player_list_brush);
+    ++player_index;
   }
 }
 
