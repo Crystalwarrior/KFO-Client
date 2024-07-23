@@ -29,7 +29,7 @@ private:
     QBasicTimer timer;
     QDateTime target_time;
     QString time_format = "hh:mm:ss";
-    qint64 time_interval = 1000 / 60;
+    qint64 p_time_interval = 1000 / 60;
 };
 
 #endif // AOCLOCKLABEL_H
