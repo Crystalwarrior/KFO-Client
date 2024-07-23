@@ -75,7 +75,7 @@ void AOApplication::server_packet_received(AOPacket *p_packet)
 
     net_manager->server_connected(true);
 
-    QStringList f_contents = {"AO2", "2.10.1"};
+    QStringList f_contents = {"AO2", QString::number(get_release()) + QString::number(get_major_version()) + QString::number(get_minor_version())};
     send_server_packet(new AOPacket("ID", f_contents));
   }
   else if (header == "CT") {
@@ -738,7 +738,7 @@ void AOApplication::server_packet_received(AOPacket *p_packet)
       return;
 
     // Reload theme request
-    if (f_contents.size() > 1 && f_contents.at(1) == "1") {
+    if (f_contents.size() > 1 && f_contents.at(1) == "1" && Options::getInstance().serverSubTheme() != subtheme) {
       Options::getInstance().setServerSubTheme(subtheme);
       w_courtroom->on_reload_theme_clicked();
     }
