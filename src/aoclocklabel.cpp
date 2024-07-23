@@ -4,7 +4,7 @@ AOClockLabel::AOClockLabel(QWidget *parent) : QLabel(parent) {}
 
 void AOClockLabel::start()
 {
-  timer.start(time_interval, this);
+  timer.start(p_time_interval, this);
 }
 
 void AOClockLabel::start(qint64 msecs)
@@ -85,7 +85,7 @@ void AOClockLabel::set_format(QString formatting, qint64 timer_value)
 
 void AOClockLabel::set_interval(qint64 timer_interval)
 {
-  time_interval = timer_interval;
+  p_time_interval = timer_interval;
   if (this->active()) {
     this->stop();
     this->start();
