@@ -775,6 +775,9 @@ private:
   ScrollText *ui_music_name;
   InterfaceLayer *ui_music_display;
 
+  ScrollText *ui_area_message;
+  InterfaceLayer *ui_area_message_display;
+
   StickerLayer *ui_vp_sticker;
 
   static const int max_clocks = 5;
@@ -958,6 +961,7 @@ public slots:
   void on_reload_theme_clicked();
 
   void update_ui_music_name();
+  void update_ui_area_message(QString text);
 
   void onTextChanged();
 
