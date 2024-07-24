@@ -205,6 +205,18 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   ui_music_name->setAttribute(Qt::WA_TransparentForMouseEvents);
   ui_music_name->setObjectName("ui_music_name");
 
+  ui_area_message_display = new InterfaceLayer(this, ao_app);
+  ui_area_message_display->set_play_once(false);
+  ui_area_message_display->set_cull_image(false);
+  ui_area_message_display->transform_mode = Qt::SmoothTransformation;
+  ui_area_message_display->setAttribute(Qt::WA_TransparentForMouseEvents);
+  ui_area_message_display->setObjectName("ui_area_message_display");
+
+  ui_area_message = new ScrollText(ui_area_message_display);
+  ui_area_message->setText(tr("None"));
+  ui_area_message->setAttribute(Qt::WA_TransparentForMouseEvents);
+  ui_area_message->setObjectName("ui_area_message");
+
   for (int i = 0; i < max_clocks; i++) {
     ui_clock[i] = new AOClockLabel(this);
     ui_clock[i]->setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -1158,6 +1170,25 @@ void Courtroom::set_widgets()
   }
   ui_music_display->load_image("music_display", "");
 
+  set_size_and_pos(ui_area_message, "area_message");
+
+  ui_area_message_display->move(0, 0);
+  pos_size_type design_ini_res =
+      ao_app->get_element_dimensions("area_message_display", "courtroom_design.ini");
+
+  if (design_ini_res.width < 0 || design_ini_res.height < 0) {
+    qWarning() << "could not find \"area_display\" in courtroom_design.ini";
+  }
+  else {
+    ui_area_message_display->move(design_ini_res.x,
+                          Options::getInstance().menuBarLocked()
+                              ? design_ini_res.y + menu_bar->height()
+                              : design_ini_res.y);
+    ui_area_message_display->combo_resize(design_ini_res.width, design_ini_res.height);
+  }
+  ui_area_message_display->load_image("area_message_display", "");
+  ui_area_message_display->hide();
+
   set_size_and_pos(ui_rp_clock, "rp_clock");
 
   for (int i = 0; i < max_clocks; i++) {
@@ -1491,6 +1522,7 @@ void Courtroom::set_fonts(QString p_char)
   set_font(ui_music_list, "", "music_list", p_char);
   set_font(ui_area_list, "", "area_list", p_char);
   set_font(ui_music_name, "", "music_name", p_char);
+  set_font(ui_area_message, "", "area_message", p_char);
 
   for (int i = 0; i < max_clocks; i++)
     set_font(ui_clock[i], "", "clock_" + QString::number(i), p_char);
@@ -1602,7 +1634,7 @@ void Courtroom::set_size_and_pos(QWidget *p_widget, QString p_identifier, QStrin
     QSet<QString> unaffected = {"message", "showname", "back_to_lobby", "char_buttons",  // A list of widgets that shouldn't be affected
                               "char_select_left", "char_select_right", "spectator", "char_password", // by the menu bar repositioning
                                 "char_list", "char_taken", "char_passworded", "char_search",
-                                "left_evidence_icon", "right_evidence_icon", "music_name"};
+                                "left_evidence_icon", "right_evidence_icon", "music_name", "area_message"};
     QSet<QString> affect = {"evidence_background", "evidence_button"}; // Relative widgets that SHOULD be affected
 
     // Is the menu bar locked? If so, move the widgets a few pixels down to give it space
@@ -4652,6 +4684,17 @@ void Courtroom::update_ui_music_name()
     if (result.isEmpty())
       return;
     ui_music_name->setText(result);
+}
+
+void Courtroom::update_ui_area_message(QString text)
+{
+  if (text.isEmpty()) {
+    ui_area_message_display->hide();
+  }
+  else {
+    ui_area_message_display->show();
+    ui_area_message->setText(text);
+  }
 }
 
 void Courtroom::handle_wtce(QString p_wtce, int variant)
