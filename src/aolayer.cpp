@@ -144,7 +144,7 @@ void AOLayer::move_and_center(int ax, int ay)
     center_pixmap(movie_frames[0]); // just use the first frame since dimensions are all that matter
 }
 
-void BackgroundLayer::load_image(QString p_filename)
+void BackgroundLayer::load_image(QString p_filename, bool desk)
 {
   play_once = false;
   cull_image = false;
@@ -155,7 +155,20 @@ void BackgroundLayer::load_image(QString p_filename)
 #ifdef DEBUG_MOVIE
   qDebug() << "[BackgroundLayer] BG loaded: " << p_filename;
 #endif
-  QString final_path = ao_app->get_image_suffix(ao_app->get_background_path(p_filename));
+  QString desk_override = read_design_ini("overlays/" + f_background, get_background_path("design.ini"));
+  if (desk_override != "") {
+    f_desk_image = desk_override;
+  }
+  else if (w_courtroom->server_overlay != "") { // BN+ Packet
+    if (file_exists(get_image_suffix(
+            get_background_path(w_courtroom->server_overlay)))) {
+      f_desk_image = w_courtroom->server_overlay;
+    }
+    else if (file_exists(get_image_suffix(
+                 VPath("overlays/" + w_courtroom->server_overlay)))) {
+      f_desk_image = w_courtroom->server_overlay;
+    }
+  }
 
   if (final_path == last_path) {
     // Don't restart background if background is unchanged
