@@ -155,18 +155,16 @@ void BackgroundLayer::load_image(QString p_filename, bool desk)
 #ifdef DEBUG_MOVIE
   qDebug() << "[BackgroundLayer] BG loaded: " << p_filename;
 #endif
-  QString desk_override = read_design_ini("overlays/" + f_background, get_background_path("design.ini"));
-  if (desk_override != "") {
-    f_desk_image = desk_override;
+  QString final_path = "";
+  if (!desk) {
+    final_path = ao_app->get_image_suffix(ao_app->get_background_path(p_filename));
   }
-  else if (w_courtroom->server_overlay != "") { // BN+ Packet
-    if (file_exists(get_image_suffix(
-            get_background_path(w_courtroom->server_overlay)))) {
-      f_desk_image = w_courtroom->server_overlay;
+  else {
+    if (file_exists(ao_app->get_image_suffix(ao_app->get_background_path(p_filename)))) {
+      final_path = ao_app->get_image_suffix(ao_app->get_background_path(p_filename));
     }
-    else if (file_exists(get_image_suffix(
-                 VPath("overlays/" + w_courtroom->server_overlay)))) {
-      f_desk_image = w_courtroom->server_overlay;
+    else {
+      final_path = ao_app->get_image_suffix(VPath("overlays/" + p_filename));
     }
   }
 
