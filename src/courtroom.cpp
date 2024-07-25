@@ -4504,7 +4504,7 @@ void Courtroom::set_scene(bool show_desk, const QString f_side)
 {
   current_side = f_side;
   ui_vp_background->load_image(ao_app->get_pos_path(f_side));
-  ui_vp_desk->load_image(ao_app->get_pos_path(f_side, true));
+  ui_vp_desk->load_image(ao_app->get_pos_path(f_side, true), true);
 
   if (show_desk)
     ui_vp_desk->show();
