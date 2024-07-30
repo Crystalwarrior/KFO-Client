@@ -178,7 +178,7 @@ class BackgroundLayer : public AOLayer {
   Q_OBJECT
 public:
   BackgroundLayer(QWidget *p_parent, AOApplication *p_ao_app);
-  void load_image(QString p_filename);
+  void load_image(QString p_filename, bool desk = false);
 signals:
   void hide_void();
 protected:
