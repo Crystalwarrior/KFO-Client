@@ -6,11 +6,6 @@
 #include <QScrollBar>
 #include <QTextBrowser>
 #include <QTextCursor>
-#include <iostream>
-#include <string>
-#include <vector>
-#include <regex>
-#include <algorithm>
 
 class AOTextArea : public QTextBrowser {
 public:
@@ -20,7 +15,7 @@ public:
   void append_chatmessage(QString p_name, QString p_message,
                           QString p_name_colour, QString p_color = QString());
   void append_error(QString p_message);
-  std::string closetags(std::string html);
+  QString closetags(QString html);
 
 private:
   const QRegularExpression url_parser_regex = QRegularExpression("\\b(https?://\\S+\\.\\S+)\\b");
