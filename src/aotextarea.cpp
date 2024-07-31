@@ -32,8 +32,8 @@ void AOTextArea::append_chatmessage(QString p_name, QString p_message,
     p_message += " ";
   }
 
-  QString result = QString::fromStdString(this->closetags(p_message.replace("\n", "<br>").toStdString()));
-  result = result.replace(url_parser_regex, "<a href='\\1'>\\1</a>");
+  QString result = this->closetags(p_message);
+  result = result.replace("\n", "<br>").replace(url_parser_regex, "<a href='\\1'>\\1</a>");
 
   if (!p_color.isEmpty()) {
     result = "<font color=" + p_color + ">" + result + "</font>";
@@ -81,43 +81,28 @@ void AOTextArea::auto_scroll(QTextCursor old_cursor, int old_scrollbar_value,
   }
 }
 
-std::string AOTextArea::closetags(std::string html)
+QString AOTextArea::closetags(QString html)
 {
-  std::regex opened_regex(R"(<([a-z]+)(?: .*)?(?<![/|/ ])>)",
-                          std::regex_constants::icase);
-  std::regex closed_regex(R"(</([a-z]+)>)", std::regex_constants::icase);
+  QRegExp opened_regex("(<([a-z]+)(?: .*)?(?<![/|/ ])>)");
+  QRegExp closed_regex("(</([a-z]+)>)");
 
-  std::vector<std::string> openedtags;
-  std::vector<std::string> closedtags;
-  std::smatch match;
+  int pos1 = opened_regex.indexIn(html);
+  int pos2 = closed_regex.indexIn(html);
+  QStringList opentags = opened_regex.capturedTexts();
+  QStringList closetags = closed_regex.capturedTexts();
 
-  std::string::const_iterator search_start(html.cbegin());
-  while (std::regex_search(search_start, html.cend(), match, opened_regex)) {
-    openedtags.push_back(match[1]);
-    search_start = match.suffix().first;
-  }
-
-  search_start = html.cbegin();
-  while (std::regex_search(search_start, html.cend(), match, closed_regex)) {
-    closedtags.push_back(match[1]);
-    search_start = match.suffix().first;
-  }
-
-  size_t len_opened = openedtags.size();
-
-  if (closedtags.size() == len_opened) {
-    return html;
-  }
-
-  std::reverse(openedtags.begin(), openedtags.end());
-  for (size_t i = 0; i < len_opened; i++) {
-    auto it = std::find(closedtags.begin(), closedtags.end(), openedtags[i]);
-    if (it == closedtags.end()) {
-      html += "</" + openedtags[i] + ">";
+  int i = 1;
+  int size_opentags = opentags.count();
+  for (QString tag:closetags) {
+    if (i <= size_opentags) {
+      QString expected_opentag = tag.replace("</", "<").replace(">", ""); 
+        if (!opentags.at(size_opentags - i).startsWith(expected_opentag)) {
+        QString expected_closetag = opentags.at(size_opentags - i);
+        expected_closetag = expected_closetag.replace("<", "</");
+        html = html + expected_closetag;
+        }
     }
-    else {
-      closedtags.erase(it);
-    }
+    i++;
   }
   return html;
 }
