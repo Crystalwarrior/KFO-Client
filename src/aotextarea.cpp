@@ -86,23 +86,27 @@ QString AOTextArea::closetags(QString html)
   QRegExp opened_regex("(<([a-z]+)(?: .*)?(?<![/|/ ])>)");
   QRegExp closed_regex("(</([a-z]+)>)");
 
-  int pos1 = opened_regex.indexIn(html);
-  int pos2 = closed_regex.indexIn(html);
+  opened_regex.indexIn(html);
+  closed_regex.indexIn(html);
   QStringList opentags = opened_regex.capturedTexts();
   QStringList closetags = closed_regex.capturedTexts();
 
-  int i = 1;
   int size_opentags = opentags.count();
-  for (QString tag:closetags) {
-    if (i <= size_opentags) {
-      QString expected_opentag = tag.replace("</", "<").replace(">", ""); 
-        if (!opentags.at(size_opentags - i).startsWith(expected_opentag)) {
+  for (int i = 1; i <= size_opentags; i++) {
+    if (i <= closetags.count()) {
+      QString expected_opentag = closetags.at(i - 1);
+      expected_opentag = expected_opentag.replace("</", "<").replace(">", "");
+      if (!opentags.at(size_opentags - i).startsWith(expected_opentag)) {
         QString expected_closetag = opentags.at(size_opentags - i);
         expected_closetag = expected_closetag.replace("<", "</");
         html = html + expected_closetag;
-        }
+      }
     }
-    i++;
+    else {
+      QString expected_closetag = opentags.at(size_opentags - i);
+      expected_closetag = expected_closetag.replace("<", "</");
+      html = html + expected_closetag;
+    }
   }
   return html;
 }
