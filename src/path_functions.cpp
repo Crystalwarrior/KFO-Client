@@ -140,13 +140,17 @@ QString AOApplication::get_pos_path(const QString& pos, const bool desk)
   QString desk_override = read_design_ini("overlays/" + f_background, get_background_path("design.ini"));
   if (desk_override != "") {
     f_desk_image = desk_override;
-} else if (w_courtroom->server_overlay != "") { // BN+ Packet
+  }
+  else if (w_courtroom->server_overlay != "") { // BN+ Packet
     if (file_exists(get_image_suffix(
-            get_background_path(w_courtroom->server_overlay))))
-    {
+            get_background_path(w_courtroom->server_overlay)))) {
       f_desk_image = w_courtroom->server_overlay;
     }
-}
+    else if (file_exists(get_image_suffix(
+                 VPath("overlays/" + w_courtroom->server_overlay)))) {
+      f_desk_image = w_courtroom->server_overlay;
+    }
+  }
   if (desk) {
     return f_desk_image;
   }
