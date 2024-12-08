@@ -2654,7 +2654,9 @@ void Courtroom::unpack_chatmessage(QStringList p_contents)
   evidence_presented = false;
   ui_vp_objection->stop();
   chat_tick_timer->stop();
-  ui_vp_evidence_display->reset();
+  if (ui_vp_evidence_display->last_evidence_index != m_chatmessage[EVIDENCE_ID].toInt())
+    ui_vp_evidence_display->reset();
+
   // This chat msg is not objection so we're not waiting on the objection animation to finish to display the character.
   if (!handle_objection())
     handle_ic_message();
@@ -2748,7 +2750,7 @@ void Courtroom::log_chatmessage(QString f_message, int f_char_id, QString f_show
     }
 
     // If the evidence ID is in the valid range
-    if (f_evi_id > 0 && f_evi_id <= local_evidence_list.size()) {
+    if (f_evi_id != ui_vp_evidence_display->last_evidence_index && f_evi_id > 0 && f_evi_id <= local_evidence_list.size()) {
       blankpost = false;
       // Obtain the evidence name
       QString f_evi_name = local_evidence_list.at(f_evi_id - 1).name;
@@ -3483,6 +3485,9 @@ void Courtroom::display_evidence_image()
 {
   QString side = m_chatmessage[SIDE];
   int f_evi_id = m_chatmessage[EVIDENCE_ID].toInt();
+  if (current_side == side && f_evi_id == ui_vp_evidence_display->last_evidence_index)
+    return;
+
   if (f_evi_id > 0 && f_evi_id <= local_evidence_list.size()) {
     // shifted by 1 because 0 is no evidence per legacy standards
     QString f_image = local_evidence_list.at(f_evi_id - 1).image;
@@ -6776,6 +6781,13 @@ void Courtroom::format_clock(int id, QString time_format, qint64 msecs) {
   if (id >= 0 && id < max_clocks && ui_clock[id] != nullptr)
   {
     ui_clock[id]->set_format(time_format, msecs);
+  }
+}
+
+void Courtroom::interval_clock(int id, qint64 timer_interval)
+{
+  if (id >= 0 && id < max_clocks && ui_clock[id] != nullptr) {
+    ui_clock[id]->set_interval(timer_interval);
   }
 }
 
