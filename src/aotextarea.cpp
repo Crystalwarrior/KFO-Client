@@ -32,9 +32,8 @@ void AOTextArea::append_chatmessage(QString p_name, QString p_message,
     p_message += " ";
   }
 
-  QString result = p_message.toHtmlEscaped()
-                       .replace("\n", "<br>")
-                       .replace(url_parser_regex, "<a href='\\1'>\\1</a>");
+  QString result = this->closetags(p_message);
+  result = result.replace("\n", "<br>").replace(url_parser_regex, "<a href='\\1'>\\1</a>");
 
   if (!p_color.isEmpty()) {
     result = "<font color=" + p_color + ">" + result + "</font>";
@@ -80,4 +79,34 @@ void AOTextArea::auto_scroll(QTextCursor old_cursor, int old_scrollbar_value,
     this->moveCursor(QTextCursor::End);
     this->verticalScrollBar()->setValue(this->verticalScrollBar()->maximum());
   }
+}
+
+QString AOTextArea::closetags(QString html)
+{
+  QRegExp opened_regex("(<([a-z]+)(?: .*)?(?<![/|/ ])>)");
+  QRegExp closed_regex("(</([a-z]+)>)");
+
+  opened_regex.indexIn(html);
+  closed_regex.indexIn(html);
+  QStringList opentags = opened_regex.capturedTexts();
+  QStringList closetags = closed_regex.capturedTexts();
+
+  int size_opentags = opentags.count();
+  for (int i = 1; i <= size_opentags; i++) {
+    if (i <= closetags.count()) {
+      QString expected_opentag = closetags.at(i - 1);
+      expected_opentag = expected_opentag.replace("</", "<").replace(">", "");
+      if (!opentags.at(size_opentags - i).startsWith(expected_opentag)) {
+        QString expected_closetag = opentags.at(size_opentags - i);
+        expected_closetag = expected_closetag.replace("<", "</");
+        html = html + expected_closetag;
+      }
+    }
+    else {
+      QString expected_closetag = opentags.at(size_opentags - i);
+      expected_closetag = expected_closetag.replace("<", "</");
+      html = html + expected_closetag;
+    }
+  }
+  return html;
 }
