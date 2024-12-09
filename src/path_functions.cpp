@@ -66,7 +66,11 @@ VPath AOApplication::get_music_path(QString p_song)
 VPath AOApplication::get_background_path(QString p_file)
 {
   if (courtroom_constructed) {
-    return VPath("background/" + w_courtroom->get_current_background() + "/" + p_file);
+    if (p_file.startsWith("overlays/")){
+      return VPath(p_file);
+    }else{
+      return VPath("background/" + w_courtroom->get_current_background() + "/" + p_file);
+    }
   }
   return get_default_background_path(p_file);
 }
@@ -140,13 +144,17 @@ QString AOApplication::get_pos_path(const QString& pos, const bool desk)
   QString desk_override = read_design_ini("overlays/" + f_background, get_background_path("design.ini"));
   if (desk_override != "") {
     f_desk_image = desk_override;
-} else if (w_courtroom->server_overlay != "") { // BN+ Packet
+  }
+  else if (w_courtroom->server_overlay != "") { // BN+ Packet
     if (file_exists(get_image_suffix(
-            get_background_path(w_courtroom->server_overlay))))
-    {
+            get_background_path(w_courtroom->server_overlay)))) {
       f_desk_image = w_courtroom->server_overlay;
     }
-}
+    else if (file_exists(get_image_suffix(
+                 VPath("overlays/" + w_courtroom->server_overlay)))) {
+      f_desk_image = "overlays/" + w_courtroom->server_overlay;
+    }
+  }
   if (desk) {
     return f_desk_image;
   }
