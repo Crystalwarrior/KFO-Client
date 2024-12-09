@@ -66,7 +66,11 @@ VPath AOApplication::get_music_path(QString p_song)
 VPath AOApplication::get_background_path(QString p_file)
 {
   if (courtroom_constructed) {
-    return VPath("background/" + w_courtroom->get_current_background() + "/" + p_file);
+    if (p_file.startsWith("overlays/")){
+      return VPath(p_file)
+    }else{
+      return VPath("background/" + w_courtroom->get_current_background() + "/" + p_file);
+    }
   }
   return get_default_background_path(p_file);
 }
@@ -148,7 +152,7 @@ QString AOApplication::get_pos_path(const QString& pos, const bool desk)
     }
     else if (file_exists(get_image_suffix(
                  VPath("overlays/" + w_courtroom->server_overlay)))) {
-      f_desk_image = w_courtroom->server_overlay;
+      f_desk_image = "overlays/" + w_courtroom->server_overlay;
     }
   }
   if (desk) {
