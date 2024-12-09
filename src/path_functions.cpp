@@ -67,7 +67,7 @@ VPath AOApplication::get_background_path(QString p_file)
 {
   if (courtroom_constructed) {
     if (p_file.startsWith("overlays/")){
-      return VPath(p_file)
+      return VPath(p_file);
     }else{
       return VPath("background/" + w_courtroom->get_current_background() + "/" + p_file);
     }
