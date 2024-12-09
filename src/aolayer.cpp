@@ -157,7 +157,6 @@ void BackgroundLayer::load_image(QString p_filename)
 #endif
   QString final_path = ao_app->get_image_suffix(ao_app->get_background_path(p_filename));
 
-
   if (final_path == last_path) {
     // Don't restart background if background is unchanged
     return;
