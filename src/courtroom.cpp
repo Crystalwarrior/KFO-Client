@@ -1700,7 +1700,7 @@ void Courtroom::set_background(QString p_background, bool display)
     settings.setIniCodec("UTF-8");
   #endif
     QStringList keys = settings.childGroups();
-    // Insert values in reverse order
+    // UNFORTUNATLEY, the order of pos inserted will be unpredictable because ini's are unordered!
     for (const QString &pos : keys) {
       pos_list.append(pos);
     }
