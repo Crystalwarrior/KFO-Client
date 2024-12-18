@@ -82,18 +82,74 @@ VPath AOApplication::get_default_background_path(QString p_file)
 
 QString AOApplication::get_pos_path(const QString& pos, const bool desk)
 {
-  // witness is default if pos is invalid
-  QString f_background;
-  QString f_desk_image;
+  // Witness is default BG
+  QString f_background = "wit";
+  QString f_desk_image = "wit_overlay";
+
+  if (desk) {
+    f_desk_image = get_old_pos_path(pos, desk);
+  }
+  else {
+    f_background = get_old_pos_path(pos, desk);
+  }
+
+  // Special desk handling
+  QString desk_override = read_design_ini("overlays/" + f_background, get_background_path("design.ini"));
+  if (desk_override != "") {
+    f_desk_image = get_image_suffix(get_background_path(desk_override));
+  }
+
+  // DRO-style override handling
+  QString suffix = "back";
+  if (desk) {
+    suffix = "front";
+  }
+
+  // Read the positions.ini file
+  QString override = read_design_ini(pos + "/" + suffix, get_background_path("positions.ini"));
+  if (override != "") {
+    // Set both to the override (we only send back 1 of the 2 anyway)
+    f_desk_image = get_image_suffix(get_background_path(override));
+    f_background = get_image_suffix(get_background_path(override));
+  }
+
+  // Server dictates to override our overlay
+  if (w_courtroom->server_overlay != "") {
+    // Overlay is located inside of our BG folder
+    QString path_test = get_image_suffix(get_background_path(w_courtroom->server_overlay));
+    if (file_exists(path_test)) {
+      f_desk_image = path_test;
+    }
+
+    // Specific overlay *folder* to access inside of the overlay folder
+    path_test = get_image_suffix(VPath("overlays/" + w_courtroom->server_overlay + "/" + pos));
+    if (file_exists(path_test)) {
+      f_desk_image = path_test;
+    }
+
+    // Specific file path to access inside of the overlay folder
+    path_test = get_image_suffix(VPath("overlays/" + w_courtroom->server_overlay));
+    if (file_exists(path_test)) {
+      f_desk_image = path_test;
+    }
+  }
+  if (desk) {
+    return f_desk_image;
+  }
+  return f_background;
+}
+
+QString AOApplication::get_old_pos_path(const QString& pos, const bool desk)
+{
+  QString f_background = "wit";
+  QString f_desk_image = "wit_overlay";
+  // if we have pre-2.8-style positions, e.g. witnessempty.png, use that as the default.
   if (file_exists(get_image_suffix(get_background_path("witnessempty")))) {
     f_background = "witnessempty";
     f_desk_image = "stand";
   }
-  else {
-    f_background = "wit";
-    f_desk_image = "wit_overlay";
-  }
 
+  // Pre-2.8-style positions are detected
   if (pos == "def" && file_exists(get_image_suffix(
                              get_background_path("defenseempty")))) {
     f_background = "defenseempty";
@@ -141,25 +197,12 @@ QString AOApplication::get_pos_path(const QString& pos, const bool desk)
     f_desk_image = pos + "_overlay";
   }
 
-  QString desk_override = read_design_ini("overlays/" + f_background, get_background_path("design.ini"));
-  if (desk_override != "") {
-    f_desk_image = desk_override;
-  }
-  else if (w_courtroom->server_overlay != "") { // BN+ Packet
-    if (file_exists(get_image_suffix(
-            get_background_path(w_courtroom->server_overlay)))) {
-      f_desk_image = w_courtroom->server_overlay;
-    }
-    else if (file_exists(get_image_suffix(
-                 VPath("overlays/" + w_courtroom->server_overlay)))) {
-      f_desk_image = "overlays/" + w_courtroom->server_overlay;
-    }
-  }
   if (desk) {
-    return f_desk_image;
+    return get_image_suffix(get_background_path(f_desk_image));
   }
-  return f_background;
+  return get_image_suffix(get_background_path(f_background));
 }
+
 
 VPath AOApplication::get_evidence_path(QString p_file)
 {
