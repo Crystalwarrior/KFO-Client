@@ -75,7 +75,7 @@ void AOApplication::server_packet_received(AOPacket *p_packet)
 
     net_manager->server_connected(true);
 
-    QStringList f_contents = {"AO2", QString::number(get_release()) + QString::number(get_major_version()) + QString::number(get_minor_version())};
+    QStringList f_contents = {"AO2", QString("%1.%2.%3").arg(QString::number(get_release()), QString::number(get_major_version()), QString::number(get_minor_version()))};
     send_server_packet(new AOPacket("ID", f_contents));
   }
   else if (header == "CT") {
@@ -267,10 +267,11 @@ void AOApplication::server_packet_received(AOPacket *p_packet)
 
       char_type f_char;
       f_char.name = sub_elements.at(0);
-      // if (sub_elements.size() >= 2)             If this breaks anything,
-      //  f_char.description = sub_elements.at(1);       I blame Symphony
 
-      // temporary. the CharsCheck packet sets this properly
+      f_char.category = "";
+      if (sub_elements.size() >= 2) {
+        f_char.category = sub_elements.at(1);
+      }  
       f_char.taken = false;
 
       w_courtroom->append_char(f_char);
@@ -707,6 +708,13 @@ void AOApplication::server_packet_received(AOPacket *p_packet)
         timer_value = f_contents.at(2).toLongLong();
       }
       w_courtroom->format_clock(id, time_format, timer_value);
+    }
+  }
+  else if (header == "TIN") {
+    if (courtroom_constructed && f_contents.size() == 2) {
+      int id = f_contents.at(0).toInt();
+      qint64 timer_interval = f_contents.at(1).toLongLong();
+      w_courtroom->interval_clock(id, timer_interval);
     }
   }
   else if (header == "CHECK") {

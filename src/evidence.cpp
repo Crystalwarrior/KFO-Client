@@ -490,7 +490,8 @@ void Courtroom::on_evidence_double_clicked(int p_id)
 
   // We have to check if the ID is on the currently displayed page.
   // This is because SOMEONE allowed the switching of pages while evidence is still being edited.
-  if (p_id < ui_evidence_list.count()) {
+  // p_id is also going to be a negative number if it's not the currently d isplayed page
+  if (p_id >= 0 && p_id < ui_evidence_list.count()) {
     ui_evidence_list.at(p_id)->set_selected(true);
   }
   current_evidence = f_real_id;
@@ -577,13 +578,17 @@ void Courtroom::on_evidence_delete_clicked()
   else {
     local_evidence_list.remove(current_evidence);
     private_evidence_list = local_evidence_list;
-    set_evidence_page();
-
     // Autosave private evidence
     evidence_save("inventories/autosave.ini");
   }
+  current_evidence_page = current_evidence / max_evidence_on_page;
+  set_evidence_page();
 
-  current_evidence = 0;
+  current_evidence = qMax(0, current_evidence - 1);
+
+  // Display the target evidence using the local ID
+  int p_id = current_evidence - (max_evidence_on_page * current_evidence_page);
+  on_evidence_double_clicked(p_id);
 }
 
 bool Courtroom::on_evidence_x_clicked()
