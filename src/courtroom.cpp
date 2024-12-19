@@ -1679,15 +1679,29 @@ void Courtroom::set_background(QString p_background, bool display)
   // Populate the dropdown list with all pos that exist on this bg
   QStringList pos_list = {};
   for (const QString &key : default_pos.keys()) {
-    if (file_exists(ao_app->get_image_suffix(
-            ao_app->get_background_path(default_pos[key]))) || // if we have 2.8-style positions, e.g. def.png, wit.webp, hld.apng
-        file_exists(
+    if (file_exists(
             ao_app->get_image_suffix(ao_app->get_background_path(key)))) { // if we have pre-2.8-style positions, e.g. defenseempty.png
       pos_list.append(default_pos[key]);
     }
   }
+  // design.ini positions=def,pro,wit,...
   for (const QString &pos : ao_app->read_design_ini("positions", ao_app->get_background_path("design.ini")).split(",")) {
     if (file_exists(ao_app->get_image_suffix(ao_app->get_background_path(pos)))) {
+      pos_list.append(pos);
+    }
+  }
+
+  // DRO-Style positions.ini overrides all
+  QString positions_ini = ao_app->get_real_path(ao_app->get_background_path("positions.ini"));
+  if (file_exists(positions_ini)) {
+    pos_list.clear();
+    QSettings settings(positions_ini, QSettings::IniFormat);
+  #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    settings.setIniCodec("UTF-8");
+  #endif
+    QStringList keys = settings.childGroups();
+    // UNFORTUNATLEY, the order of pos inserted will be unpredictable because ini's are unordered!
+    for (const QString &pos : keys) {
       pos_list.append(pos);
     }
   }
@@ -4505,9 +4519,12 @@ void Courtroom::play_sfx()
         ao_app->get_sfx_looping(current_char, current_emote) == "1");
 }
 
-void Courtroom::set_scene(bool show_desk, const QString f_side)
+void Courtroom::set_scene(bool show_desk, QString f_side)
 {
   current_side = f_side;
+  if (current_side.isEmpty()) {
+    f_side = ao_app->get_char_side(current_char);
+  }
   ui_vp_background->load_image(ao_app->get_pos_path(f_side));
   ui_vp_desk->load_image(ao_app->get_pos_path(f_side, true));
 
@@ -5156,7 +5173,12 @@ void Courtroom::display_pos_remove()
     ui_pos_remove->hide();
   else {
     QString default_pos = ao_app->get_char_side(current_char);
-    if ((selected_side != default_pos && pos_dropdown_list.contains(default_pos)) || !pos_dropdown_list.contains(selected_side)){
+    if ((selected_side != default_pos && pos_dropdown_list.contains(default_pos)) ||
+        (!pos_dropdown_list.contains(selected_side) ||
+         (ui_pos_dropdown->count() > 0 && selected_side != ui_pos_dropdown->itemText(0))
+         )
+        )
+    {
       ui_pos_remove->show();
       return;
     }

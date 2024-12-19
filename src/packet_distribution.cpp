@@ -373,9 +373,7 @@ void AOApplication::server_packet_received(AOPacket *p_packet)
     if (f_contents_size > 3) {
         // Set overlay if not empty
         //   overlay
-        if (!f_contents[2].isEmpty()) {
-            w_courtroom->server_overlay = f_contents[2];
-        }
+        w_courtroom->server_overlay = f_contents[2];
     }
 
     const bool shouldShowImmediately =
