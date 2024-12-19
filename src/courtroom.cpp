@@ -454,10 +454,18 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   callwords_notification->setVisible(true);
 
   // Auto-completer's vanilla commands
-  auto_commands = QStringList({
-    "/help", "/bg", "/getarea", "/getareas", "/roll",
-    "/area_lock", "/area_unlock", "/8ball", "/afk"
-  });
+  QStringList auto_commands;
+  if (ao_app->server_software == "KFO-Server"){
+    if (file_exists(VPath("custom sets/autocompleter/KFO-Server_commands.ini"))){
+      auto_commands = ao_app->get_list_file(VPath("custom sets/autocompleter/KFO-Server_commands.ini"));
+    }
+  }
+  if (auto_commands.isEmpty()){
+    auto_commands = QStringList({
+      "/help", "/bg", "/getarea", "/getareas", "/roll",
+      "/area_lock", "/area_unlock", "/8ball", "/afk"
+    });
+  }
   model = new QStringListModel(auto_commands, this);
   // model->sort(0, Qt::AscendingOrder); // This will become an option
   completer = new QCompleter(model, this);
