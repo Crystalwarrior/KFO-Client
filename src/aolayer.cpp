@@ -155,14 +155,12 @@ void BackgroundLayer::load_image(QString p_filename)
 #ifdef DEBUG_MOVIE
   qDebug() << "[BackgroundLayer] BG loaded: " << p_filename;
 #endif
-  QString final_path = ao_app->get_image_suffix(ao_app->get_background_path(p_filename));
-
-  if (final_path == last_path) {
+  if (p_filename == last_path) {
     // Don't restart background if background is unchanged
     return;
   }
 
-  start_playback(final_path);
+  start_playback(p_filename);
   play();
 }
 
