@@ -487,8 +487,8 @@ void AOOptionsDialog::setupUI()
 
   // Populate scaling dropdown. This is necessary as we need the user data
   // embeeded into the entry.
-  ui_scaling_combobox->addItem(tr("Pixel"), "fast");
-  ui_scaling_combobox->addItem(tr("Smooth"), "smooth");
+  ui_scaling_combobox->addItem("pixel", "pixel");
+  ui_scaling_combobox->addItem("smooth", "smooth");
 
   registerOption<QCheckBox, bool>("shake_cb", &Options::shakeEnabled,
                                   &Options::setShakeEnabled);

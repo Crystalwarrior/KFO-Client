@@ -399,7 +399,7 @@ void Options::setColorLogEnabled(bool value)
 
 bool Options::clearSoundsDropdownOnPlayEnabled() const
 {
-  return config.value("stickysounds", true).toBool();
+  return config.value("stickysounds", false).toBool();
 }
 
 void Options::setClearSoundsDropdownOnPlayEnabled(bool value)
@@ -409,7 +409,7 @@ void Options::setClearSoundsDropdownOnPlayEnabled(bool value)
 
 bool Options::clearEffectsDropdownOnPlayEnabled() const
 {
-  return config.value("stickyeffects", true).toBool();
+  return config.value("stickyeffects", false).toBool();
 }
 
 void Options::setClearEffectsDropdownOnPlayEnabled(bool value)
@@ -419,7 +419,7 @@ void Options::setClearEffectsDropdownOnPlayEnabled(bool value)
 
 bool Options::clearPreOnPlayEnabled() const
 {
-  return config.value("stickypres", true).toBool();
+  return config.value("stickypres", false).toBool();
 }
 
 void Options::setClearPreOnPlayEnabled(bool value)
@@ -521,7 +521,7 @@ void Options::setAnimatedThemeEnabled(bool value)
 
 QString Options::defaultScalingMode() const
 {
-  return config.value("default_scaling", "fast").toString();
+  return config.value("default_scaling", "smooth").toString();
 }
 
 void Options::setDefaultScalingMode(QString value)
@@ -561,7 +561,7 @@ void Options::setPlaySelectedSFXOnIdle(bool value)
 
 bool Options::evidenceDoubleClickEdit() const
 {
-  return config.value("evidence_double_click", true).toBool();
+  return config.value("evidence_double_click", false).toBool();
 }
 
 void Options::setEvidenceDoubleClickEdit(bool value)
