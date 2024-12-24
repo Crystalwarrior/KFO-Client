@@ -392,7 +392,7 @@ QString AOApplication::get_image_suffix(VPath path_to_check, bool static_image)
   if (!static_image) {
     suffixes.append({ ".webp", ".apng", ".gif" });
   }
-  suffixes.append(".png");
+  suffixes.append({ ".png", ".jpg", ".jpeg" });
 
   // Check if we were provided a direct filepath with a suffix already
   QString path = path_to_check.toQString();
