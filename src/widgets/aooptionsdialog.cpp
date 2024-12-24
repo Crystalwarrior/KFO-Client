@@ -539,6 +539,9 @@ void AOOptionsDialog::setupUI()
   registerOption<QCheckBox, bool>("menu_bar_visible_btn_cb",
                                   &Options::menuBarLocked,
                                   &Options::setMenuBarLocked);
+  registerOption<QCheckBox, bool>("auto_updates_cb",
+                                  &Options::autoUpdates,
+                                  &Options::setAutoUpdates);
   registerOption<QCheckBox, bool>("image_streaming_cb",
                                   &Options::imageStreaming,
                                   &Options::setImageStreaming);

@@ -315,6 +315,10 @@ public:
   bool menuBarLocked() const;
   void setMenuBarLocked(bool value);
 
+  // Whether to enable automatic updating of the program or not
+  bool autoUpdates() const;
+  void setAutoUpdates(bool value);
+
   // If crossfade is enabled
   bool crossfade() const;
   void setCrossfade(bool value);

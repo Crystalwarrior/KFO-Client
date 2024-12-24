@@ -11,6 +11,7 @@ class QTreeWidgetItem;
 #include <QMainWindow>
 #include "networkmanager.h"
 #include "file_functions.h"
+#include <QProcess>
 
 #ifdef ANDROID
 #include <QtAndroidExtras/QtAndroid>
