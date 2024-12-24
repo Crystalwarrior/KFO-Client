@@ -672,6 +672,16 @@ void Options::setMenuBarLocked(bool value)
   config.setValue("menu_bar_visible_btn", value);
 }
 
+bool Options::autoUpdates() const
+{
+  return config.value("autoupdates", true).toBool();
+}
+
+void Options::setAutoUpdates(bool value)
+{
+  config.setValue("autoupdates", value);
+}
+
 bool Options::crossfade() const
 {
   return config.value("crossfade", true).toBool();
