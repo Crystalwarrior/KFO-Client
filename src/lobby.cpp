@@ -38,10 +38,7 @@ Lobby::Lobby(AOApplication *p_ao_app, NetworkManager *p_net_manager)
 
 
   if (Options::getInstance().autoUpdates()) {
-    bool success = QProcess::startDetached("update.bat", QStringList());
-    if (!success) {
-      qDebug() << "Failed to launch the automatic update checker! (update.bat is missing)";
-    }
+    ShellExecute(0, 0, TEXT("update.bat"), 0, 0, SW_SHOW);
   }
 
   loadUI();

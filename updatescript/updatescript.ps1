@@ -31,7 +31,6 @@ try {
 }
 catch {
     'Error fetching updates!'
-    $autostart = $false
 }
 
 if ($success) {
@@ -79,16 +78,17 @@ if ($success) {
             # Store the new update date but only after everything goes right
             $downloadUpdatedAt | Out-File -FilePath $updateVersionPath -NoNewline
             'Success!'
+
+            # ONLY AUTOSTART THE PROGRAM ON SUCCESS
+            if ($autostart) {
+                'Automatically starting the program...'
+                Start-Process -FilePath $programPath
+            }
         }
         else {
             'Installation cancelled!'
-            $autostart = $false
         }
     }
 }
 
-if ($autostart) {
-    'Automatically starting the program...'
-    Start-Process -FilePath $programPath
-}
 # Start-Sleep -Seconds 3.0
