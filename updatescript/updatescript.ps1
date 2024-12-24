@@ -6,7 +6,7 @@ param(
 
 Add-Type -AssemblyName PresentationFramework
 # Download latest release from github
-$programPath = "Attorney_Online.exe"
+$programName = "Attorney_Online"
 $repo = "Crystalwarrior/KFO-Client"
 $filenamePattern = "*windows-2019-windows.zip"
 $pathExtract = "."
@@ -45,14 +45,14 @@ if ($success) {
     }
     else {
         'Update found!'
-        $answer = [System.Windows.MessageBox]::Show("A new update for $programPath has been detected! This process will close all open instances of the client. Continue?","Confirm Update","YesNo")
+        $answer = [System.Windows.MessageBox]::Show("A new update for $programName has been detected! This process will close all open instances of the client. Continue?","Confirm Update","YesNo")
         if ($answer -eq "Yes") {
             'Closing all open instances of the client...'
-            Get-Process -Name $programPath -errorAction 'silentlycontinue' | ForEach-Object {
+            Get-Process -Name $programName -errorAction 'silentlycontinue' | ForEach-Object {
                 $_.CloseMainWindow() | Out-Null
             }
             Start-Sleep -milliseconds 100
-            Stop-Process -name $programPath -force -errorAction 'silentlycontinue'
+            Stop-Process -name $programName -force -errorAction 'silentlycontinue'
 
             'Downloading...'
             $pathZip = Join-Path -Path $([System.IO.Path]::GetTempPath()) -ChildPath $(Split-Path -Path $downloadUri -Leaf)
@@ -82,7 +82,8 @@ if ($success) {
             # ONLY AUTOSTART THE PROGRAM ON SUCCESS
             if ($autostart) {
                 'Automatically starting the program...'
-                Start-Process -FilePath $programPath
+                $path = $programName + ".exe"
+                Start-Process -FilePath $path
             }
         }
         else {
