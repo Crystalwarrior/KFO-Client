@@ -1877,7 +1877,9 @@ void Courtroom::update_character(int p_cid, QString char_name, bool reset_emote)
     if (dir_exists(custom_objection_dir)) {
       ui_custom_objection->show();
       QDir directory(custom_objection_dir);
-      QStringList custom_obj = directory.entryList(QStringList() << "*.png"
+      QStringList custom_obj = directory.entryList(QStringList() << "*.jpg"
+                                                                 << "*.jpeg"
+                                                                 << "*.png"
                                                                  << "*.gif"
                                                                  << "*.apng"
                                                                  << "*.webp",
