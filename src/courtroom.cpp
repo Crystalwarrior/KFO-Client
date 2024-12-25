@@ -132,6 +132,8 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   ui_vp_message->setReadOnly(true);
   ui_vp_message->setObjectName("ui_vp_message");
 
+  ui_vp_video = new VideoScreen(ui_viewport, ao_app);
+
   ui_vp_testimony = new SplashLayer(this, ao_app);
   ui_vp_testimony->set_play_once(false);
   ui_vp_testimony->setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -909,6 +911,7 @@ void Courtroom::update_audio_volume()
   sfx_player->set_volume(ui_sfx_slider->value() * remaining_percent);
   objection_player->set_volume(ui_sfx_slider->value() * remaining_percent);
   blip_player->set_volume(ui_blip_slider->value() * remaining_percent);
+  ui_vp_video->set_volume(ui_sfx_slider->value() * remaining_percent);
 }
 
 void Courtroom::set_courtroom_size()
@@ -1021,6 +1024,8 @@ void Courtroom::set_widgets()
   ui_vp_pencil->move(26, 20);
   // ui_vp_pencil->move(45, 3);
 
+  ui_vp_video->move(0, 0);
+  ui_vp_video->resize(ui_viewport->width(), ui_viewport->height());
 
 
   ui_vp_background->move_and_center(0, 0);
@@ -3103,6 +3108,10 @@ void Courtroom::handle_ic_message()
 
   int emote_mod = m_chatmessage[EMOTE_MOD].toInt();
   bool immediate = m_chatmessage[IMMEDIATE].toInt() == 1;
+
+  ui_vp_video->show();
+  ui_vp_video->play_character_video(m_chatmessage[CHAR_NAME], "test.mp4");
+
   if (m_chatmessage[EMOTE] != "") {
     // Display our own character
     display_character();
