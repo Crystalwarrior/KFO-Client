@@ -2900,6 +2900,8 @@ void Courtroom::display_character()
   // stop video playback without returning "finished" signal
   ui_vp_video->stop();
   ui_vp_video->hide();
+  // Return transparency
+  ui_vp_graphics->setBackgroundBrush(Qt::transparent);
 
   // Stop all previously playing animations, effects etc.
   ui_vp_speedlines->hide();
@@ -3122,7 +3124,8 @@ void Courtroom::handle_video()
     ui_vp_chatbox->setVisible(false);
     // bye bye text too
     ui_vp_message->setVisible(false);
-
+    // Black borders
+    ui_vp_graphics->setBackgroundBrush(Qt::black);
     ui_vp_video->play_character_video(m_chatmessage[CHAR_NAME], m_chatmessage[VIDEO]);
   }
   else
@@ -3134,6 +3137,8 @@ void Courtroom::handle_video()
 void Courtroom::video_finished()
 {
   ui_vp_video->hide();
+  // Return transparency
+  ui_vp_graphics->setBackgroundBrush(Qt::transparent);
   handle_ic_message();
 }
 

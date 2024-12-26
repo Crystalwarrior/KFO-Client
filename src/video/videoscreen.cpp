@@ -13,8 +13,6 @@ VideoScreen::VideoScreen(AOApplication *p_ao_app, QGraphicsItem *parent)
     , m_player(new QMediaPlayer(this, QMediaPlayer::LowLatency))
 {
   ao_app = p_ao_app;
-  setAspectRatioMode(Qt::KeepAspectRatioByExpanding);
-
   m_player->setVideoOutput(this);
 
   connect(m_player, SIGNAL(videoAvailableChanged(bool)), this, SLOT(update_video_availability(bool)));
@@ -67,6 +65,14 @@ void VideoScreen::play_character_video(QString p_charname, QString p_video)
     finish_playback();
     return;
   }
+  QString expand_override =
+      ao_app->read_design_ini("expand", l_filepath + ".ini");
+
+  setAspectRatioMode(Qt::KeepAspectRatio);
+  if (expand_override != "" && expand_override.startsWith("true")) {
+    setAspectRatioMode(Qt::KeepAspectRatioByExpanding);
+  }
+
   set_file_name(l_filepath);
   play();
 }
