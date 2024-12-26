@@ -203,9 +203,9 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   ui_music_display->transform_mode = Qt::SmoothTransformation;
   ui_music_display->setAttribute(Qt::WA_TransparentForMouseEvents);
   ui_music_display->setObjectName("ui_music_display");
+  ui_music_display->hide();
 
   ui_music_name = new ScrollText(ui_music_display);
-  ui_music_name->setText(tr("None"));
   ui_music_name->setAttribute(Qt::WA_TransparentForMouseEvents);
   ui_music_name->setObjectName("ui_music_name");
 
@@ -4710,6 +4710,7 @@ void Courtroom::handle_song(QStringList *p_contents)
     if (music_player->music_watcher.isRunning()) {
         music_player->music_watcher.cancel();
     }
+    ui_music_display->show();
     ui_music_name->setText(tr("[LOADING] %1").arg(f_song_clear));
   }
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -4724,8 +4725,11 @@ void Courtroom::handle_song(QStringList *p_contents)
 void Courtroom::update_ui_music_name()
 {
     QString result = music_player->music_watcher.result();
-    if (result.isEmpty())
+    if (result.isEmpty()) {
+      ui_music_display->hide();
       return;
+    }
+    ui_music_display->show();
     ui_music_name->setText(result);
 }
 
