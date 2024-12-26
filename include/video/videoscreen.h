@@ -20,6 +20,8 @@ public:
 
   void set_volume(int p_value);
 
+  void set_muted(bool p_toggle);
+
 public slots:
   void set_file_name(QString file_name);
 

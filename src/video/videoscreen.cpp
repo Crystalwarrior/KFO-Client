@@ -212,3 +212,8 @@ void VideoScreen::set_volume(int p_value)
   }
   m_player->setVolume(p_value);
 }
+
+void VideoScreen::set_muted(bool p_toggle)
+{
+  m_player->setMuted(p_toggle);
+}

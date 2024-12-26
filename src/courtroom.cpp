@@ -1968,6 +1968,7 @@ void Courtroom::enter_courtroom()
   objection_player->set_muted(false);
   sfx_player->set_muted(false);
   blip_player->set_muted(false);
+  ui_vp_video->set_muted(false);
 
   // Update the audio sliders
   update_audio_volume();
@@ -2885,6 +2886,7 @@ bool Courtroom::handle_objection()
       break;
       m_chatmessage[EMOTE_MOD] = QChar(PREANIM);
     }
+    ui_vp_video->set_muted(true);
     ui_vp_objection->load_image(
         filename, m_chatmessage[CHAR_NAME],
         ao_app->get_chat(m_chatmessage[CHAR_NAME]));
@@ -3126,6 +3128,8 @@ void Courtroom::handle_video()
     ui_vp_message->setVisible(false);
     // Black borders
     ui_vp_graphics->setBackgroundBrush(Qt::black);
+    // Make sure the video isn't muted
+    ui_vp_video->set_muted(false);
     ui_vp_video->play_character_video(m_chatmessage[CHAR_NAME], m_chatmessage[VIDEO]);
   }
   else
@@ -3136,6 +3140,7 @@ void Courtroom::handle_video()
 
 void Courtroom::video_finished()
 {
+  ui_vp_video->set_muted(false);
   ui_vp_video->hide();
   // Return transparency
   ui_vp_graphics->setBackgroundBrush(Qt::transparent);
@@ -6498,6 +6503,7 @@ void Courtroom::on_change_character_clicked()
 {
   sfx_player->set_muted(true);
   blip_player->set_muted(true);
+  ui_vp_video->set_muted(true);
 
   set_char_select();
 

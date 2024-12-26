@@ -137,7 +137,8 @@ QString AOMusicPlayer::play(QString p_song, int channel, bool loop,
   p_song_clear = p_song_clear.left(p_song_clear.lastIndexOf('.'));
 
   if (is_stop) {
-    return QObject::tr("None");
+    // No music just clears out the displayer
+    return "";
   }
 
   if (error_code == BASS_ERROR_HANDLE) { // Cheap hack to see if file missing

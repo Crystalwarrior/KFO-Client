@@ -50,5 +50,6 @@
         <file>resource/ui/lobby_assets/tab_motd_off_hover.png</file>
         <file>resource/ui/lobby_assets/tab_motd_on.png</file>
         <file>resource/ui/lobby_assets/tab_motd_on_hover.png</file>
+        <file>resource/data_sample.avi</file>
     </qresource>
 </RCC>
