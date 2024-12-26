@@ -78,5 +78,4 @@ private slots:
   void check_status(QMediaPlayer::MediaStatus);
 
   void check_state(QMediaPlayer::State);
-
 };

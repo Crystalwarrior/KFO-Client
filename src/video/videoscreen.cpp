@@ -25,28 +25,20 @@
 #include <QUrl>
 
 VideoScreen::VideoScreen(QWidget *parent, AOApplication *ao_app)
-    : QVideoWidget()
+    : QVideoWidget(parent)
     , ao_app(ao_app)
     , m_scanned(false)
     , m_video_available(false)
     , m_running(false)
     , m_player(new QMediaPlayer(this, QMediaPlayer::LowLatency))
 {
-  m_parent = parent;
-  setAspectRatioMode(Qt::KeepAspectRatioByExpanding);
+  setAspectRatioMode(Qt::KeepAspectRatio);
 
   m_player->setVideoOutput(this);
 
   connect(m_player, SIGNAL(videoAvailableChanged(bool)), this, SLOT(update_video_availability(bool)));
   connect(m_player, SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)), this, SLOT(check_status(QMediaPlayer::MediaStatus)));
   connect(m_player, SIGNAL(stateChanged(QMediaPlayer::State)), this, SLOT(check_state(QMediaPlayer::State)));
-
-//  connect(m_engine, SIGNAL(current_device_changed(DRAudioDevice)), this, SLOT(update_audio_output()));
-//  connect(m_config, SIGNAL(video_volume_changed(int)), this, SLOT(update_volume()));
-//  connect(m_engine, SIGNAL(volume_changed(int32_t)), this, SLOT(update_volume()));
-//  connect(m_engine, SIGNAL(options_changed(DRAudio::Options)), this, SLOT(update_volume()));
-//  connect(m_family.get(), SIGNAL(volume_changed(int32_t)), this, SLOT(update_volume()));
-//  connect(m_family.get(), SIGNAL(options_changed(DRAudio::Options)), this, SLOT(update_volume()));
 
   update_audio_output();
 }
@@ -146,15 +138,9 @@ void VideoScreen::check_status(QMediaPlayer::MediaStatus p_status)
       break;
 
     case QMediaPlayer::LoadedMedia:
+    case QMediaPlayer::BufferedMedia:
       m_scanned = true;
-      if (m_video_available)
-      {
-        start_playback();
-      }
-      else
-      {
-        finish_playback();
-      }
+      start_playback();
       break;
 
     default:
@@ -185,10 +171,10 @@ void VideoScreen::check_state(QMediaPlayer::State p_state)
 
 void VideoScreen::start_playback()
 {
+  this->show();
   if (m_player->state() == QMediaPlayer::StoppedState)
   {
     update_audio_output();
-
     m_player->play();
   }
 }

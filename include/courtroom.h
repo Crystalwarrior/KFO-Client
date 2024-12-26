@@ -277,6 +277,9 @@ public:
   // Display the evidence image box when presenting evidence in IC
   void display_evidence_image();
 
+  // Handle video playback before passing over to the next step
+  void handle_video();
+
   // Handle the stuff that comes when the character appears on screen and starts animating (preanims etc.)
   void handle_ic_message();
 
@@ -565,7 +568,7 @@ private:
 
   // Minumum and maximum number of parameters in the MS packet
   static const int MS_MINIMUM = 15;
-  static const int MS_MAXIMUM = 35;
+  static const int MS_MAXIMUM = 36;
   QString m_chatmessage[MS_MAXIMUM];
 
   QString previous_ic_message = "";
@@ -943,6 +946,8 @@ private:
   void refresh_evidence();
   void show_evidence(int f_real_id);
   void set_evidence_page();
+
+  void video_finished();
 
   void reset_ui();
 

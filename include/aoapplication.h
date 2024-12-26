@@ -96,6 +96,7 @@ public:
   bool desk_mod_supported = false;
   bool evidence_supported = false;
   bool cccc_ic_supported = false;
+  bool video_supported = false;
   bool arup_supported = false;
   bool casing_alerts_supported = false;
   bool modcall_reason_supported = false;
@@ -330,6 +331,9 @@ public:
 
   // Returns if the sfx is defined as looping in char.ini
   QString get_sfx_looping(QString p_char, int p_emote);
+
+  // Returns the video filename for that emote
+  QString get_video_name(QString p_char, int p_emote);
 
   // Returns if an emote has a frame specific SFX for it
   QString get_sfx_frame(QString p_char, QString p_emote, int n_frame);

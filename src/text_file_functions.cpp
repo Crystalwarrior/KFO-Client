@@ -703,6 +703,13 @@ QString AOApplication::get_sfx_looping(QString p_char, int p_emote)
     return f_result;
 }
 
+QString AOApplication::get_video_name(QString p_char, int p_emote)
+{
+  QString f_result =
+      read_char_ini(p_char, QString::number(p_emote + 1), "videos");
+  return f_result;
+}
+
 QString AOApplication::get_sfx_frame(QString p_char, QString p_emote,
                                      int n_frame)
 {

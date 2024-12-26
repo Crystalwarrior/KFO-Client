@@ -132,8 +132,6 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   ui_vp_message->setReadOnly(true);
   ui_vp_message->setObjectName("ui_vp_message");
 
-  ui_vp_video = new VideoScreen(ui_viewport, ao_app);
-
   ui_vp_testimony = new SplashLayer(this, ao_app);
   ui_vp_testimony->set_play_once(false);
   ui_vp_testimony->setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -441,6 +439,9 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   ui_evidence_button = new AOButton(this, ao_app);
   ui_evidence_button->setContextMenuPolicy(Qt::CustomContextMenu);
   ui_evidence_button->setObjectName("ui_evidence_button");
+
+  ui_vp_video = new VideoScreen(this, ao_app);
+  ui_vp_video->hide();
 
   initialize_emotes();
   initialize_evidence();
@@ -880,6 +881,8 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
       this->setWindowState(Qt::WindowState::WindowActive);
   });
 
+  connect(ui_vp_video, &VideoScreen::finished, this, &Courtroom::video_finished);
+
   set_widgets();
   set_char_select();
 }
@@ -1024,7 +1027,7 @@ void Courtroom::set_widgets()
   ui_vp_pencil->move(26, 20);
   // ui_vp_pencil->move(45, 3);
 
-  ui_vp_video->move(0, 0);
+  ui_vp_video->move(ui_viewport->x(), ui_viewport->y());
   ui_vp_video->resize(ui_viewport->width(), ui_viewport->height());
 
 
@@ -2430,6 +2433,7 @@ void Courtroom::on_chat_return_pressed()
     }
   }
 
+
   // If the server we're on supports Looping SFX and Screenshake, use it if the
   // emote uses it.
   if (ao_app->looping_sfx_supported) {
@@ -2506,6 +2510,11 @@ void Courtroom::on_chat_return_pressed()
     else {
       packet_contents.append("-1");
     }
+  }
+
+  // Server allows us to send video packet
+  if (ao_app->video_supported) {
+    packet_contents.append(ao_app->get_video_name(current_char, current_emote));
   }
 
   ao_app->send_server_packet(new AOPacket("MS", packet_contents));
@@ -2679,8 +2688,9 @@ void Courtroom::unpack_chatmessage(QStringList p_contents)
     ui_vp_evidence_display->reset();
 
   // This chat msg is not objection so we're not waiting on the objection animation to finish to display the character.
-  if (!handle_objection())
-    handle_ic_message();
+  if (!handle_objection()) {
+    handle_video();
+  }
 }
 
 void Courtroom::log_chatmessage(QString f_message, int f_char_id, QString f_showname, QString f_char, QString f_objection_mod, int f_evi_id, int f_color, LogMode f_log_mode, bool sender)
@@ -3101,6 +3111,24 @@ void Courtroom::handle_emote_mod(int emote_mod, bool p_immediate)
 
 void Courtroom::objection_done() { handle_ic_message(); }
 
+void Courtroom::handle_video()
+{
+  if (ao_app->video_supported)
+  {
+    ui_vp_video->play_character_video(m_chatmessage[CHAR_NAME], m_chatmessage[VIDEO]);
+  }
+  else
+  {
+    handle_ic_message();
+  }
+}
+
+void Courtroom::video_finished()
+{
+  ui_vp_video->hide();
+  handle_ic_message();
+}
+
 void Courtroom::handle_ic_message()
 {
   // Update the chatbox information
@@ -3108,10 +3136,6 @@ void Courtroom::handle_ic_message()
 
   int emote_mod = m_chatmessage[EMOTE_MOD].toInt();
   bool immediate = m_chatmessage[IMMEDIATE].toInt() == 1;
-
-  ui_vp_video->show();
-  ui_vp_video->play_character_video(m_chatmessage[CHAR_NAME], "test.mp4");
-
   if (m_chatmessage[EMOTE] != "") {
     // Display our own character
     display_character();
@@ -6597,6 +6621,7 @@ void Courtroom::regenerate_ic_chatlog()
                    item.get_selfname(), item.get_datetime().toLocalTime());
   }
 }
+
 
 void Courtroom::on_set_dl_clicked()
 {
