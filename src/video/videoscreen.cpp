@@ -1,22 +1,3 @@
-/**************************************************************************
-**
-** mk2
-** Copyright (C) 2022 Tricky Leifa
-**
-** This program is free software: you can redistribute it and/or modify
-** it under the terms of the GNU Affero General Public License as published by
-** the Free Software Foundation, either version 3 of the License, or
-** (at your option) any later version.
-**
-** This program is distributed in the hope that it will be useful,
-** but WITHOUT ANY WARRANTY; without even the implied warranty of
-** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-** GNU Affero General Public License for more details.
-**
-** You should have received a copy of the GNU Affero General Public License
-** along with this program.  If not, see <http://www.gnu.org/licenses/>.
-**
-**************************************************************************/
 #include "video/videoscreen.h"
 
 #include <QAudioOutputSelectorControl>
@@ -24,15 +5,15 @@
 #include <QStyleOptionGraphicsItem>
 #include <QUrl>
 
-VideoScreen::VideoScreen(QWidget *parent, AOApplication *ao_app)
-    : QVideoWidget(parent)
-    , ao_app(ao_app)
+VideoScreen::VideoScreen(AOApplication *p_ao_app, QGraphicsItem *parent)
+    : QGraphicsVideoItem(parent)
     , m_scanned(false)
     , m_video_available(false)
     , m_running(false)
     , m_player(new QMediaPlayer(this, QMediaPlayer::LowLatency))
 {
-  setAspectRatioMode(Qt::KeepAspectRatio);
+  ao_app = p_ao_app;
+  setAspectRatioMode(Qt::KeepAspectRatioByExpanding);
 
   m_player->setVideoOutput(this);
 

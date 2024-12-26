@@ -96,6 +96,10 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   ui_vp_desk = new BackgroundLayer(ui_viewport, ao_app);
   ui_vp_desk->setObjectName("ui_vp_desk");
 
+  ui_vp_graphics = new AOGraphicsView(this);
+  ui_vp_video = new VideoScreen(ao_app);
+  ui_vp_graphics->scene()->addItem(ui_vp_video);
+
   ui_vp_effect = new EffectLayer(this, ao_app);
   ui_vp_effect->setAttribute(Qt::WA_TransparentForMouseEvents);
   ui_vp_effect->setObjectName("ui_vp_effect");
@@ -439,9 +443,6 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   ui_evidence_button = new AOButton(this, ao_app);
   ui_evidence_button->setContextMenuPolicy(Qt::CustomContextMenu);
   ui_evidence_button->setObjectName("ui_evidence_button");
-
-  ui_vp_video = new VideoScreen(this, ao_app);
-  ui_vp_video->hide();
 
   initialize_emotes();
   initialize_evidence();
@@ -1027,8 +1028,8 @@ void Courtroom::set_widgets()
   ui_vp_pencil->move(26, 20);
   // ui_vp_pencil->move(45, 3);
 
-  ui_vp_video->move(ui_viewport->x(), ui_viewport->y());
-  ui_vp_video->resize(ui_viewport->width(), ui_viewport->height());
+  ui_vp_graphics->move(ui_viewport->x(), ui_viewport->y());
+  ui_vp_graphics->resize(ui_viewport->width(), ui_viewport->height());
 
 
   ui_vp_background->move_and_center(0, 0);
@@ -2891,13 +2892,15 @@ bool Courtroom::handle_objection()
     ui_vp_player_char->set_play_once(true);
     return true;
   }
-  if (m_chatmessage[EMOTE] != "")
-    display_character();
   return false;
 }
 
 void Courtroom::display_character()
 {
+  // stop video playback without returning "finished" signal
+  ui_vp_video->stop();
+  ui_vp_video->hide();
+
   // Stop all previously playing animations, effects etc.
   ui_vp_speedlines->hide();
   ui_vp_player_char->stop();
@@ -3109,12 +3112,17 @@ void Courtroom::handle_emote_mod(int emote_mod, bool p_immediate)
   }
 }
 
-void Courtroom::objection_done() { handle_ic_message(); }
+void Courtroom::objection_done() { handle_video(); }
 
 void Courtroom::handle_video()
 {
-  if (ao_app->video_supported)
+  if (ao_app->video_supported && !m_chatmessage[VIDEO].isEmpty())
   {
+    // Set chatbox visibility so it doesn't overlay the video
+    ui_vp_chatbox->setVisible(false);
+    // bye bye text too
+    ui_vp_message->setVisible(false);
+
     ui_vp_video->play_character_video(m_chatmessage[CHAR_NAME], m_chatmessage[VIDEO]);
   }
   else

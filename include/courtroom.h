@@ -26,6 +26,7 @@
 #include "eventfilters.h"
 #include "aoemotepreview.h"
 #include "video/videoscreen.h"
+#include "aographicsview.h"
 
 #include <QCheckBox>
 #include <QCloseEvent>
@@ -47,6 +48,9 @@
 #include <QQueue>
 #include <QMenuBar>
 #include <QShortcut>
+
+#include <QGraphicsItem>
+#include <QGraphicsView>
 
 #include <QBrush>
 #include <QDebug>
@@ -763,6 +767,7 @@ private:
   QLabel *ui_vp_showname;
   InterfaceLayer *ui_vp_chat_arrow;
   QTextEdit *ui_vp_message;
+  AOGraphicsView *ui_vp_graphics;
   VideoScreen *ui_vp_video;
   SplashLayer *ui_vp_testimony;
   SplashLayer *ui_vp_wtce;
