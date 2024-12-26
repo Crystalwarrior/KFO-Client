@@ -96,6 +96,10 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   ui_vp_desk = new BackgroundLayer(ui_viewport, ao_app);
   ui_vp_desk->setObjectName("ui_vp_desk");
 
+  ui_vp_graphics = new AOGraphicsView(this);
+  ui_vp_video = new VideoScreen(ao_app);
+  ui_vp_graphics->scene()->addItem(ui_vp_video);
+
   ui_vp_effect = new EffectLayer(this, ao_app);
   ui_vp_effect->setAttribute(Qt::WA_TransparentForMouseEvents);
   ui_vp_effect->setObjectName("ui_vp_effect");
@@ -878,6 +882,8 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
       this->setWindowState(Qt::WindowState::WindowActive);
   });
 
+  connect(ui_vp_video, &VideoScreen::finished, this, &Courtroom::video_finished);
+
   set_widgets();
   set_char_select();
 }
@@ -909,6 +915,7 @@ void Courtroom::update_audio_volume()
   sfx_player->set_volume(ui_sfx_slider->value() * remaining_percent);
   objection_player->set_volume(ui_sfx_slider->value() * remaining_percent);
   blip_player->set_volume(ui_blip_slider->value() * remaining_percent);
+  ui_vp_video->set_volume(ui_sfx_slider->value() * remaining_percent);
 }
 
 void Courtroom::set_courtroom_size()
@@ -1021,6 +1028,8 @@ void Courtroom::set_widgets()
   ui_vp_pencil->move(26, 20);
   // ui_vp_pencil->move(45, 3);
 
+  ui_vp_graphics->move(ui_viewport->x(), ui_viewport->y());
+  ui_vp_graphics->resize(ui_viewport->width(), ui_viewport->height());
 
 
   ui_vp_background->move_and_center(0, 0);
@@ -1959,6 +1968,7 @@ void Courtroom::enter_courtroom()
   objection_player->set_muted(false);
   sfx_player->set_muted(false);
   blip_player->set_muted(false);
+  ui_vp_video->set_muted(false);
 
   // Update the audio sliders
   update_audio_volume();
@@ -2425,6 +2435,7 @@ void Courtroom::on_chat_return_pressed()
     }
   }
 
+
   // If the server we're on supports Looping SFX and Screenshake, use it if the
   // emote uses it.
   if (ao_app->looping_sfx_supported) {
@@ -2501,6 +2512,11 @@ void Courtroom::on_chat_return_pressed()
     else {
       packet_contents.append("-1");
     }
+  }
+
+  // Server allows us to send video packet
+  if (ao_app->video_supported) {
+    packet_contents.append(ao_app->get_video_name(current_char, current_emote));
   }
 
   ao_app->send_server_packet(new AOPacket("MS", packet_contents));
@@ -2674,8 +2690,9 @@ void Courtroom::unpack_chatmessage(QStringList p_contents)
     ui_vp_evidence_display->reset();
 
   // This chat msg is not objection so we're not waiting on the objection animation to finish to display the character.
-  if (!handle_objection())
-    handle_ic_message();
+  if (!handle_objection()) {
+    handle_video();
+  }
 }
 
 void Courtroom::log_chatmessage(QString f_message, int f_char_id, QString f_showname, QString f_char, QString f_objection_mod, int f_evi_id, int f_color, LogMode f_log_mode, bool sender)
@@ -2869,6 +2886,7 @@ bool Courtroom::handle_objection()
       break;
       m_chatmessage[EMOTE_MOD] = QChar(PREANIM);
     }
+    ui_vp_video->set_muted(true);
     ui_vp_objection->load_image(
         filename, m_chatmessage[CHAR_NAME],
         ao_app->get_chat(m_chatmessage[CHAR_NAME]));
@@ -2876,13 +2894,17 @@ bool Courtroom::handle_objection()
     ui_vp_player_char->set_play_once(true);
     return true;
   }
-  if (m_chatmessage[EMOTE] != "")
-    display_character();
   return false;
 }
 
 void Courtroom::display_character()
 {
+  // stop video playback without returning "finished" signal
+  ui_vp_video->stop();
+  ui_vp_video->hide();
+  // Return transparency
+  ui_vp_graphics->setBackgroundBrush(Qt::transparent);
+
   // Stop all previously playing animations, effects etc.
   ui_vp_speedlines->hide();
   ui_vp_player_char->stop();
@@ -3094,7 +3116,36 @@ void Courtroom::handle_emote_mod(int emote_mod, bool p_immediate)
   }
 }
 
-void Courtroom::objection_done() { handle_ic_message(); }
+void Courtroom::objection_done() { handle_video(); }
+
+void Courtroom::handle_video()
+{
+  if (ao_app->video_supported && !m_chatmessage[VIDEO].isEmpty())
+  {
+    // Set chatbox visibility so it doesn't overlay the video
+    ui_vp_chatbox->setVisible(false);
+    // bye bye text too
+    ui_vp_message->setVisible(false);
+    // Black borders
+    ui_vp_graphics->setBackgroundBrush(Qt::black);
+    // Make sure the video isn't muted
+    ui_vp_video->set_muted(false);
+    ui_vp_video->play_character_video(m_chatmessage[CHAR_NAME], m_chatmessage[VIDEO]);
+  }
+  else
+  {
+    handle_ic_message();
+  }
+}
+
+void Courtroom::video_finished()
+{
+  ui_vp_video->set_muted(false);
+  ui_vp_video->hide();
+  // Return transparency
+  ui_vp_graphics->setBackgroundBrush(Qt::transparent);
+  handle_ic_message();
+}
 
 void Courtroom::handle_ic_message()
 {
@@ -6010,7 +6061,7 @@ void Courtroom::onTextChanged()
   QString text = ui_ic_chat_message->toPlainText();
   QString emotion_number = QString::number(current_button_selected + 1);
 
-  if (!Options::getInstance().stopTypingIcon() /*&& ao_app->typing_timer_supported*/) {
+  if (!Options::getInstance().stopTypingIcon() && ao_app->typing_timer_supported) {
     if (text.isEmpty() && typingTimer->isActive()) {
         typingTimer->stop();
         ao_app->send_server_packet(new AOPacket("TT", {"0", current_char, emotion_number}));
@@ -6452,6 +6503,7 @@ void Courtroom::on_change_character_clicked()
 {
   sfx_player->set_muted(true);
   blip_player->set_muted(true);
+  ui_vp_video->set_muted(true);
 
   set_char_select();
 
@@ -6588,6 +6640,7 @@ void Courtroom::regenerate_ic_chatlog()
                    item.get_selfname(), item.get_datetime().toLocalTime());
   }
 }
+
 
 void Courtroom::on_set_dl_clicked()
 {

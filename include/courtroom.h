@@ -25,6 +25,8 @@
 #include "scrolltext.h"
 #include "eventfilters.h"
 #include "aoemotepreview.h"
+#include "video/videoscreen.h"
+#include "aographicsview.h"
 
 #include <QCheckBox>
 #include <QCloseEvent>
@@ -46,6 +48,9 @@
 #include <QQueue>
 #include <QMenuBar>
 #include <QShortcut>
+
+#include <QGraphicsItem>
+#include <QGraphicsView>
 
 #include <QBrush>
 #include <QDebug>
@@ -275,6 +280,9 @@ public:
 
   // Display the evidence image box when presenting evidence in IC
   void display_evidence_image();
+
+  // Handle video playback before passing over to the next step
+  void handle_video();
 
   // Handle the stuff that comes when the character appears on screen and starts animating (preanims etc.)
   void handle_ic_message();
@@ -564,7 +572,7 @@ private:
 
   // Minumum and maximum number of parameters in the MS packet
   static const int MS_MINIMUM = 15;
-  static const int MS_MAXIMUM = 35;
+  static const int MS_MAXIMUM = 36;
   QString m_chatmessage[MS_MAXIMUM];
 
   QString previous_ic_message = "";
@@ -759,6 +767,8 @@ private:
   QLabel *ui_vp_showname;
   InterfaceLayer *ui_vp_chat_arrow;
   QTextEdit *ui_vp_message;
+  AOGraphicsView *ui_vp_graphics;
+  VideoScreen *ui_vp_video;
   SplashLayer *ui_vp_testimony;
   SplashLayer *ui_vp_wtce;
   EffectLayer *ui_vp_effect;
@@ -941,6 +951,8 @@ private:
   void refresh_evidence();
   void show_evidence(int f_real_id);
   void set_evidence_page();
+
+  void video_finished();
 
   void reset_ui();
 
