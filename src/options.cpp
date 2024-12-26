@@ -684,7 +684,7 @@ void Options::setAutoUpdates(bool value)
 
 bool Options::crossfade() const
 {
-  return config.value("crossfade", true).toBool();
+  return config.value("crossfade", false).toBool();
 }
 
 void Options::setCrossfade(bool value)
