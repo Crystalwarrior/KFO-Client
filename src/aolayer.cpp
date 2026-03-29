@@ -666,7 +666,7 @@ void AOLayer::onImageLoaded(const QImage& image) {
 
 void AOLayer::fade(bool in, int duration)
 {
-    QEasingCurve easing = in ? QEasingCurve::OutQuart : QEasingCurve::InQuart;
+    QEasingCurve easing = in ? QEasingCurve::OutQuad : QEasingCurve::InQuad;
   
     QGraphicsOpacityEffect* fade = new QGraphicsOpacityEffect(this);
     this->setGraphicsEffect(fade);
