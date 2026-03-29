@@ -62,7 +62,7 @@ WebCache::~WebCache()
 
 QString WebCache::cacheDir() const
 {
-  return get_base_path() + "webcache/";
+  return QCoreApplication::applicationDirPath() + "/webcache/";
 }
 
 QString WebCache::cacheSubdir() const
