@@ -92,7 +92,6 @@ QPixmap AOLayer::get_pixmap(QImage image)
       f_pixmap = f_pixmap.scaled(f_w, f_h);
     else
       f_pixmap = f_pixmap.scaledToHeight(f_h, transform_mode);
-    this->resize(f_pixmap.size());
   }
   return f_pixmap;
 }

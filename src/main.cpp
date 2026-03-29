@@ -48,14 +48,6 @@ int main(int argc, char *argv[])
   while (it.hasNext())
     fontDatabase.addApplicationFont(it.next());
 
-  QPluginLoader apngPlugin("qapng");
-  if (!apngPlugin.load())
-    qCritical() << "QApng plugin could not be loaded";
-
-  QPluginLoader webpPlugin("qwebp");
-  if (!webpPlugin.load())
-    qCritical() << "QWebp plugin could not be loaded";
-
   QString p_language =
       Options::getInstance().language();
   if (p_language == "  " || p_language == "")
