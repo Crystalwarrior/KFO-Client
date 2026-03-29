@@ -5,6 +5,7 @@
 #include "misc_functions.h"
 #include "networkmanager.h"
 #include "options.h"
+#include "webcache.h"
 
 static QThreadPool *thread_pool;
 
@@ -159,6 +160,14 @@ void BackgroundLayer::load_image(QString p_filename)
     return;
   }
 
+  // Trigger webcache download if file not found locally
+  VPath vpath = ao_app->get_background_path(p_filename);
+  QString file_path = ao_app->get_image_suffix(vpath);
+  if (file_path.isEmpty() && Options::getInstance().webcacheEnabled())
+  {
+    ao_app->webcache()->resolveOrDownload(vpath.toQString(), {".webp", ".apng", ".gif", ".png"});
+  }
+
   start_playback(p_filename);
   play();
 }
@@ -227,7 +236,23 @@ void CharLayer::load_image(QString p_filename, QString p_charname,
       ao_app->get_theme_path("placeholder"), // Theme placeholder path
       ao_app->get_theme_path(
           "placeholder", ao_app->default_theme)}; // Default theme placeholder path
-  start_playback(ao_app->get_image_path(pathlist));
+  QString resolved = ao_app->get_image_path(pathlist);
+
+  // Trigger webcache download if actual character emote not found (fell back to placeholder or not found)
+  if ((resolved.isEmpty() || resolved.contains("/placeholder")) && Options::getInstance().webcacheEnabled())
+  {
+    static const QStringList image_suffixes{".webp", ".apng", ".gif", ".png"};
+    // Try downloading the character-specific paths (first 4 entries, before placeholder fallbacks)
+    for (int i = 0; i < 4 && i < pathlist.size(); ++i)
+    {
+      if (!pathlist[i].toQString().isEmpty())
+      {
+        ao_app->webcache()->resolveOrDownload(pathlist[i].toQString(), image_suffixes);
+      }
+    }
+  }
+
+  start_playback(resolved);
   play();
 }
 

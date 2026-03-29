@@ -1,5 +1,6 @@
 #include "courtroom.h"
 #include "options.h"
+#include "webcache.h"
 
 #include <QActionGroup>
 
@@ -174,6 +175,7 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   ui_debug_log->setObjectName("ui_debug_log");
   connect(ao_app, &AOApplication::qt_log_message,
           this, &Courtroom::debug_message_handler);
+  connect(ao_app->webcache(), &WebCache::fileDownloaded, this, &Courtroom::on_webcache_file_downloaded);
 
   ui_server_chatlog = new AOTextArea(this);
   ui_server_chatlog->setReadOnly(true);
@@ -6970,4 +6972,32 @@ Courtroom::~Courtroom()
   delete objection_player;
   delete blip_player;
   delete menu_bar;
+}
+
+void Courtroom::on_webcache_file_downloaded(const QString &relativePath)
+{
+  // Invalidate the asset lookup cache so future lookups find the cached file
+  ao_app->invalidate_lookup_cache();
+
+  // Check if this is a character icon and refresh the relevant button
+  if (relativePath.startsWith("characters/") && relativePath.endsWith("char_icon.png"))
+  {
+    // Extract character name from path: "characters/name/char_icon.png" -> "name"
+    QString charPath = relativePath.mid(11); // Remove "characters/"
+    int slashPos = charPath.indexOf('/');
+    if (slashPos > 0)
+    {
+      QString charName = charPath.left(slashPos);
+
+      // Find and refresh the button for this character (case-insensitive match)
+      for (int i = 0; i < ui_char_button_list.size() && i < char_list.size(); ++i)
+      {
+        if (char_list.at(i).name.toLower() == charName)
+        {
+          ui_char_button_list[i]->set_image(char_list.at(i).name);
+          break;
+        }
+      }
+    }
+  }
 }

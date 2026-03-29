@@ -1154,6 +1154,8 @@ private slots:
 
   void preview_emote(QString emote);
   void update_emote_preview();
+
+  void on_webcache_file_downloaded(const QString &relativePath);
 };
 
 #endif // COURTROOM_H

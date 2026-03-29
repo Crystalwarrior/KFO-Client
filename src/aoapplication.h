@@ -34,6 +34,7 @@ class NetworkManager;
 class Lobby;
 class Courtroom;
 class Options;
+class WebCache;
 
 class VPath : QString {
   using QString::QString;
@@ -65,6 +66,9 @@ public:
   Lobby *w_lobby;
   Courtroom *w_courtroom;
   AttorneyOnline::Discord *discord;
+
+  WebCache *webcache() const;
+
 
   QFont default_font;
 
@@ -405,6 +409,7 @@ private:
   const int MINOR_VERSION = 1;
   const int HOTFIX = 0;
 
+  WebCache *m_webcache = nullptr;
   QVector<server_type> server_list;
   QHash<uint, QString> asset_lookup_cache;
   QHash<uint, QString> dir_listing_cache;
