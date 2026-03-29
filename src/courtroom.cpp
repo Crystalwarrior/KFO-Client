@@ -3620,10 +3620,12 @@ void Courtroom::handle_ic_speaking()
     QString f_pos = m_chatmessage[SIDE];
     bool is_zoom = emote_mod == ZOOM || emote_mod == PREANIM_ZOOM;
 
-    bool do_crossfade = Options::getInstance().crossfade() && !is_zoom && !was_zoom && current_side == f_pos && last_sprite != f_emote && (f_pre.isEmpty() || f_pre == "-");
+    bool is_idle = emote_mod == IDLE;
+
+    bool do_crossfade = Options::getInstance().crossfade() && !is_zoom && !was_zoom && (last_sprite.isEmpty() || current_side == f_pos) && last_sprite != f_emote && is_idle;
     // TODO: instead of a magic number make this a settings option
     int crossfade_duration = 300;
-    
+
     if (do_crossfade && !last_sprite.isEmpty()) {
       filename = "(a)" + last_sprite;
       ui_vp_crossfade_char->load_image(filename, last_charname, 0, false);

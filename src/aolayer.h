@@ -100,9 +100,6 @@ public:
 
   void fade(bool in, int duration);
 
-  virtual void fadeout_finished();
-  virtual void fadein_finished();
-
   void invert();
 
 protected:
@@ -172,6 +169,9 @@ protected slots:
   void shfx_timer_done();
   virtual void movie_ticker();
   void onImageLoaded(const QImage& image);
+
+  virtual void fadeout_finished();
+  virtual void fadein_finished();
 };
 
 class BackgroundLayer : public AOLayer {
@@ -181,7 +181,7 @@ public:
   void load_image(QString p_filename);
 signals:
   void hide_void();
-protected:
+protected slots:
   void fadein_finished() override; // overridden to send the courtroom a signal to hide the void element
 };
 
