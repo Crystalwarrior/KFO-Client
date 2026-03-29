@@ -1,16 +1,14 @@
 #include "video/videoscreen.h"
 
-#include <QAudioOutputSelectorControl>
-#include <QMediaService>
+#include <QAudioDevice>
+#include <QAudioOutput>
+#include <QMediaDevices>
 #include <QStyleOptionGraphicsItem>
 #include <QUrl>
 
 VideoScreen::VideoScreen(AOApplication *p_ao_app, QGraphicsItem *parent)
-    : QGraphicsVideoItem(parent)
-    , m_scanned(false)
-    , m_video_available(false)
-    , m_running(false)
-    , m_player(new QMediaPlayer(this, QMediaPlayer::LowLatency))
+    : QGraphicsVideoItem(parent), m_scanned(false), m_video_available(false),
+      m_running(false), m_player(new QMediaPlayer(this))
 {
   ao_app = p_ao_app;
   m_player->setVideoOutput(this);
@@ -45,7 +43,7 @@ void VideoScreen::set_file_name(QString p_file_name)
   {
     m_scanned = true;
   }
-  m_player->setMedia(QUrl::fromLocalFile(m_file_name));
+  m_player->setSource(QUrl::fromLocalFile(m_file_name));
 }
 
 void VideoScreen::play_character_video(QString p_charname, QString p_video)
@@ -96,8 +94,7 @@ void VideoScreen::play()
 void VideoScreen::stop()
 {
   m_running = false;
-  if (m_player->state() != QMediaPlayer::StoppedState)
-  {
+  if (m_player->playbackState() != QMediaPlayer::StoppedState) {
     m_player->stop();
   }
 }
@@ -136,7 +133,7 @@ void VideoScreen::check_status(QMediaPlayer::MediaStatus p_status)
   }
 }
 
-void VideoScreen::check_state(QMediaPlayer::State p_state)
+void VideoScreen::check_state(QMediaPlayer::PlaybackState p_state)
 {
   switch (p_state)
   {
@@ -159,8 +156,7 @@ void VideoScreen::check_state(QMediaPlayer::State p_state)
 void VideoScreen::start_playback()
 {
   this->show();
-  if (m_player->state() == QMediaPlayer::StoppedState)
-  {
+  if (m_player->playbackState() == QMediaPlayer::StoppedState) {
     update_audio_output();
     m_player->play();
   }
@@ -174,46 +170,48 @@ void VideoScreen::finish_playback()
 
 void VideoScreen::update_audio_output()
 {
-  QMediaService *l_service = m_player->service();
-  if (!l_service)
-  {
-    qWarning() << "error: missing media service, device unchanged";
-    return;
+  // In Qt6, QMediaPlayer has a setAudioOutput(QAudioOutput*) method.
+  // Usually, you should keep a pointer to the QAudioOutput object
+  // as a member variable of your class.
+
+  QAudioOutput *l_audioOutput = m_player->audioOutput();
+  if (!l_audioOutput) {
+    // If not already set, create one and attach it
+    l_audioOutput = new QAudioOutput(this);
+    m_player->setAudioOutput(l_audioOutput);
   }
 
-  QAudioOutputSelectorControl *l_control = l_service->requestControl<QAudioOutputSelectorControl *>();
-  if (!l_control)
-  {
-    qWarning() << "error: missing audio output control, device unchanged";
-  }
-  else
-  {
-    const QStringList l_device_name_list = l_control->availableOutputs();
-    for (const QString &i_device_name : l_device_name_list)
-    {
-      const QString l_device_description = l_control->outputDescription(i_device_name);
-      if (i_device_name == Options::getInstance().audioOutputDevice())
-      {
-        l_control->setActiveOutput(i_device_name);
-        qDebug() << "Media player changed audio device to" << i_device_name;
-        break;
-      }
+  // Get the list of all available audio output devices
+  const QList<QAudioDevice> l_devices = QMediaDevices::audioOutputs();
+  QString targetDeviceName = Options::getInstance().audioOutputDevice();
+  bool deviceFound = false;
+
+  for (const QAudioDevice &device : l_devices) {
+    // Qt6 uses unique IDs. You can check against device.id()
+    // or device.description() depending on what your Options store.
+    if (device.id() == targetDeviceName.toUtf8()) {
+      l_audioOutput->setDevice(device);
+      qDebug() << "Media player changed audio device to"
+               << device.description();
+      deviceFound = true;
+      break;
     }
-    return;
   }
-  l_service->releaseControl(l_control);
+
+  if (!deviceFound) {
+    qWarning() << "Could not find audio device:" << targetDeviceName;
+  }
 }
 
 void VideoScreen::set_volume(int p_value)
 {
-  if (m_player->volume() == p_value)
-  {
+  if (m_player->audioOutput()->volume() == p_value) {
     return;
   }
-  m_player->setVolume(p_value);
+  m_player->audioOutput()->setVolume(p_value);
 }
 
 void VideoScreen::set_muted(bool p_toggle)
 {
-  m_player->setMuted(p_toggle);
+  m_player->audioOutput()->setMuted(p_toggle);
 }

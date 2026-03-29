@@ -1,3 +1,5 @@
+#pragma once
+
 #include "aoapplication.h"
 #include "options.h"
 
@@ -60,5 +62,5 @@ private slots:
 
   void check_status(QMediaPlayer::MediaStatus);
 
-  void check_state(QMediaPlayer::State);
+  void check_state(QMediaPlayer::PlaybackState);
 };

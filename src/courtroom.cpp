@@ -1,6 +1,8 @@
 #include "courtroom.h"
 #include "options.h"
 
+#include <QActionGroup>
+
 Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
 {
   ao_app = p_ao_app;
@@ -490,9 +492,9 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   QAction* action_settings = new QAction("Settings", this);
   QAction* action_return_lobby = new QAction("Return to Lobby", this);
   action_image_streaming->setEnabled(false);
-  action_reload_theme->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_R));
-  action_change_character->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_T));
-  action_open_dl_manager->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_G));
+  action_reload_theme->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_R));
+  action_change_character->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_T));
+  action_open_dl_manager->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_G));
 
   // Character tab
   action_hide = new QAction("Hide", this);
@@ -951,7 +953,7 @@ void Courtroom::set_mute_list()
 
   QStringList sorted_mute_list;
 
-  for (const char_type &i_char : qAsConst(char_list))
+  for (const char_type &i_char : std::as_const(char_list))
     sorted_mute_list.append(i_char.name);
 
   sorted_mute_list.sort();
@@ -966,7 +968,7 @@ void Courtroom::set_pair_list()
 {
   QStringList sorted_pair_list;
 
-  for (const char_type &i_char : qAsConst(char_list))
+  for (const char_type &i_char : std::as_const(char_list))
     sorted_pair_list.append(i_char.name);
 
   sorted_pair_list.sort();
@@ -3531,20 +3533,21 @@ void Courtroom::show_notification(int mode, QString display_name, QString f_mess
     
     int max_length = 120; // Approximated Tooltip length
     QStringList truncated_messages;
-    
-    for (const QString &message : qAsConst(callwords_history)) {
-        int message_length = message.length();
-        if (max_length >= message_length) {
-            truncated_messages << message;
-            max_length -= message_length;
-        } else {
-            // Truncate the old callwords msgs and add a "..."
-            QString truncated_msg = message.left(max_length - 3) + "...";
-            truncated_messages << truncated_msg;
-            break;
-        }
+
+    for (const QString &message : std::as_const(callwords_history)) {
+      int message_length = message.length();
+      if (max_length >= message_length) {
+        truncated_messages << message;
+        max_length -= message_length;
+      }
+      else {
+        // Truncate the old callwords msgs and add a "..."
+        QString truncated_msg = message.left(max_length - 3) + "...";
+        truncated_messages << truncated_msg;
+        break;
+      }
     }
-    
+
     callwords_notification->setToolTip(truncated_messages.join("\n"));
 }
 
@@ -4878,13 +4881,16 @@ QString Courtroom::scan_for_filtered_words(QString &message) {
                                         QRegularExpression::NoPatternOption : 
                                         QRegularExpression::CaseInsensitiveOption;
 
-    for (const QString &filtered_word : qAsConst(list_of_words)) {
-        QString wordToCheck = whole_word_match ? QStringLiteral("\\b%1\\b").arg(filtered_word) : filtered_word;
-        QRegularExpression re(wordToCheck, options);
+    for (const QString &filtered_word : std::as_const(list_of_words)) {
+      QString wordToCheck = whole_word_match
+                                ? QStringLiteral("\\b%1\\b").arg(filtered_word)
+                                : filtered_word;
+      QRegularExpression re(wordToCheck, options);
 
-        if (re.match(message).hasMatch()) {
-            message.replace(re, QString(filtered_word.length(), QChar(replaced_character[0])));
-        }
+      if (re.match(message).hasMatch()) {
+        message.replace(
+            re, QString(filtered_word.length(), QChar(replaced_character[0])));
+      }
     }
 
     return message;
@@ -4902,13 +4908,15 @@ bool Courtroom::scan_for_callwords(QString message) {
                                         QRegularExpression::NoPatternOption : 
                                         QRegularExpression::CaseInsensitiveOption;
 
-    for (const QString &callword : qAsConst(list_of_words)) {
-        QString wordToCheck = whole_word_match ? QStringLiteral("\\b%1\\b").arg(callword) : callword;
-        QRegularExpression re(wordToCheck, options);
+    for (const QString &callword : std::as_const(list_of_words)) {
+      QString wordToCheck = whole_word_match
+                                ? QStringLiteral("\\b%1\\b").arg(callword)
+                                : callword;
+      QRegularExpression re(wordToCheck, options);
 
-        if (re.match(message).hasMatch()) {
-            return true;
-        }
+      if (re.match(message).hasMatch()) {
+        return true;
+      }
     }
     return false;
 }
@@ -5213,14 +5221,14 @@ void Courtroom::on_pos_dropdown_context_menu_requested(const QPoint &pos)
   menu->addSeparator();
 
   menu->addAction(QString("Open background " + current_background), this,
-                  [=] {
-    QString p_path = ao_app->get_real_path(VPath("background/" + current_background + "/"));
-    if (!dir_exists(p_path)) {
-        return;
-    }
-    QDesktopServices::openUrl(QUrl::fromLocalFile(p_path));
-  }
-  );
+                  [=, this] {
+                    QString p_path = ao_app->get_real_path(
+                        VPath("background/" + current_background + "/"));
+                    if (!dir_exists(p_path)) {
+                      return;
+                    }
+                    QDesktopServices::openUrl(QUrl::fromLocalFile(p_path));
+                  });
   menu->popup(ui_iniswap_dropdown->mapToGlobal(pos));
 }
 
@@ -5507,16 +5515,16 @@ void Courtroom::on_iniswap_context_menu_requested(const QPoint &pos)
                     &Courtroom::on_iniswap_remove_clicked);
 
   menu->addSeparator();
-  menu->addAction(QString("Open character folder " + current_char), this,
-                  [=] {
-    QString p_path = ao_app->get_real_path(VPath("characters/" + current_char + "/"));
-    if (!dir_exists(p_path)) {
-      return;
-    }
+  menu->addAction(
+      QString("Open character folder " + current_char), this, [=, this] {
+        QString p_path =
+            ao_app->get_real_path(VPath("characters/" + current_char + "/"));
+        if (!dir_exists(p_path)) {
+          return;
+        }
 
-    QDesktopServices::openUrl(QUrl::fromLocalFile(p_path));
-  }
-  );
+        QDesktopServices::openUrl(QUrl::fromLocalFile(p_path));
+      });
   menu->popup(ui_iniswap_dropdown->mapToGlobal(pos));
 }
 
@@ -5568,7 +5576,7 @@ void Courtroom::set_sfx_dropdown()
   sound_list += ao_app->get_list_file(VPath("soundlist.ini"));
 
   QStringList display_sounds;
-  for (const QString &sound : qAsConst(sound_list)) {
+  for (const QString &sound : std::as_const(sound_list)) {
     QStringList unpacked = sound.split("=");
     QString display = unpacked[0].trimmed();
     if (unpacked.size() > 1) {
@@ -5863,7 +5871,7 @@ void Courtroom::on_pair_list_clicked(QModelIndex p_index)
   // Redo the character list.
   QStringList sorted_pair_list;
 
-  for (const char_type &i_char : qAsConst(char_list))
+  for (const char_type &i_char : std::as_const(char_list))
     sorted_pair_list.append(i_char.name);
 
   sorted_pair_list.sort();
@@ -6005,13 +6013,14 @@ void Courtroom::music_stop(bool no_effects)
   // If the fake song is not present in the music list
   if (!music_list.contains(fake_song)) {
       // Loop through our music list
-      for (const QString &song : qAsConst(music_list)) {
-          // Pick first song that does not contain a file extension
-          if (!song.contains('.')) {
-              // Use it as a fake song as the server we're working with must recognize song categories
-              fake_song = song;
-              break;
-          }
+      for (const QString &song : std::as_const(music_list)) {
+        // Pick first song that does not contain a file extension
+        if (!song.contains('.')) {
+          // Use it as a fake song as the server we're working with must
+          // recognize song categories
+          fake_song = song;
+          break;
+        }
       }
   }
   QStringList packet_contents; // its music list
@@ -6296,14 +6305,16 @@ void Courtroom::on_text_color_context_menu_requested(const QPoint &pos)
   QMenu *menu = new QMenu(this);
 
   menu->addAction(QString("Open currently used chat_config.ini"), this,
-                  [=] {
-    QString p_path = ao_app->get_asset("chat_config.ini", Options::getInstance().theme(), Options::getInstance().subTheme(), ao_app->default_theme, ao_app->get_chat(current_char));
-    if (!file_exists(p_path)) {
-        return;
-    }
-    QDesktopServices::openUrl(QUrl::fromLocalFile(p_path));
-  }
-  );
+                  [=, this] {
+                    QString p_path = ao_app->get_asset(
+                        "chat_config.ini", Options::getInstance().theme(),
+                        Options::getInstance().subTheme(),
+                        ao_app->default_theme, ao_app->get_chat(current_char));
+                    if (!file_exists(p_path)) {
+                      return;
+                    }
+                    QDesktopServices::openUrl(QUrl::fromLocalFile(p_path));
+                  });
   menu->popup(ui_text_color->mapToGlobal(pos));
 }
 

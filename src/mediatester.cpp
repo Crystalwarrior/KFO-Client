@@ -1,17 +1,20 @@
 #include "mediatester.h"
 
+#include <QAudioOutput>
 #include <QUrl>
 
 #include "debug_functions.h"
 
-MediaTester::MediaTester(QObject *parent)
-    : QObject(parent)
+MediaTester::MediaTester(QObject *parent) : QObject(parent)
 {
-  m_player.setMuted(true);
+  QAudioOutput *audioOutput = new QAudioOutput(this);
+  m_player.setAudioOutput(audioOutput);
+  audioOutput->setMuted(true);
 
-  connect(&m_player, SIGNAL(mediaStatusChanged(QMediaPlayer::MediaStatus)), this, SLOT(p_check_status(QMediaPlayer::MediaStatus)));
+  connect(&m_player, &QMediaPlayer::mediaStatusChanged, this,
+          &MediaTester::p_check_status);
 
-  m_player.setMedia(QUrl("qrc:/resource/data_sample.avi"));
+  m_player.setSource(QUrl("qrc:/resource/data_sample.avi"));
 }
 
 MediaTester::~MediaTester()

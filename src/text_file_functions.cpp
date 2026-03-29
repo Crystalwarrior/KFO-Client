@@ -798,7 +798,7 @@ QStringList AOApplication::get_effects(QString p_char)
       return lhs.toInt() < rhs.toInt();
     });
 
-    for (const QString &i_group : qAsConst(l_group_list))
+    for (const QString &i_group : std::as_const(l_group_list))
     {
       const QString l_key = i_group + "/name";
       if (!l_effects_ini.contains(l_key))

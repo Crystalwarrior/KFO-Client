@@ -10,10 +10,10 @@
 #include <QTextEdit>
 #include <QMenuBar>
 // #include <QTimer>
+#include <QAbstractItemView>
 #include <QDebug>
 #include <QMainWindow>
-#include <QAbstractItemView>
-#include <QDesktopWidget>
+#include <QScreen>
 
 class AOLineEditFilter : public QObject
 {
@@ -70,7 +70,7 @@ protected:
 
                 QPoint globalPos = QCursor::pos();
                 QRect mainWindowGeometry = mainWindow->geometry();
-                QRect screenGeometry = QApplication::desktop()->screenGeometry(mainWindow);
+                QRect screenGeometry = mainWindow->screen()->geometry();
                 int screenYPosition = mainWindowGeometry.y() - screenGeometry.y();
 
                 int f_pos_y = globalPos.y() - screenYPosition;
