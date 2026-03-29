@@ -1,6 +1,8 @@
 #include <QMediaPlayer>
 #include <QObject>
 
+class QMediaPlayer;
+
 class MediaTester : public QObject
 {
   Q_OBJECT

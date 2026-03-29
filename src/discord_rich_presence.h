@@ -3,17 +3,7 @@
 
 #include <QCoreApplication>
 #include <QDebug>
-#include <cstring>
-#include <ctime>
 #include <string>
-
-#include <discord-rpc.h>
-#include <string>
-
-#include <cstring>
-#include <ctime>
-
-#include <QDebug>
 
 namespace AttorneyOnline {
 

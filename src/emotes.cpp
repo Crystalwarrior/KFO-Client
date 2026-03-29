@@ -23,10 +23,14 @@ void Courtroom::initialize_emotes()
   emote_preview = new AOEmotePreview(this, ao_app);
   emote_preview->setObjectName("ui_emote_preview");
 
-  new QShortcut(QKeySequence(Qt::ALT + Qt::Key_Left), this, SLOT(select_previous_or_next_emote()));
-  new QShortcut(QKeySequence(Qt::ALT + Qt::Key_Right), this, SLOT(select_previous_or_next_emote()));
-  new QShortcut(QKeySequence(Qt::ALT + Qt::Key_Up), this, SLOT(select_previous_or_next_emote()));
-  new QShortcut(QKeySequence(Qt::ALT + Qt::Key_Down), this, SLOT(select_previous_or_next_emote()));
+  new QShortcut(QKeySequence(Qt::ALT | Qt::Key_Left), this,
+                SLOT(select_previous_or_next_emote()));
+  new QShortcut(QKeySequence(Qt::ALT | Qt::Key_Right), this,
+                SLOT(select_previous_or_next_emote()));
+  new QShortcut(QKeySequence(Qt::ALT | Qt::Key_Up), this,
+                SLOT(select_previous_or_next_emote()));
+  new QShortcut(QKeySequence(Qt::ALT | Qt::Key_Down), this,
+                SLOT(select_previous_or_next_emote()));
 
   connect(ui_emote_left, &AOButton::clicked, this,
           &Courtroom::on_emote_left_clicked);
@@ -126,7 +130,7 @@ void Courtroom::set_emote_page()
   ui_emote_left->hide();
   ui_emote_right->hide();
 
-  for (AOEmoteButton *i_button : qAsConst(ui_emote_list)) {
+  for (AOEmoteButton *i_button : std::as_const(ui_emote_list)) {
     i_button->hide();
   }
 
@@ -253,52 +257,40 @@ void Courtroom::select_previous_or_next_emote()
 
     if (id < 0)
         return;
-    
-    if (keySequence == QKeySequence(Qt::ALT + Qt::Key_Left))
-    {
-        int previous_emote = current_emote - 1;
-        if (previous_emote >= 0)
-        {
-            if (previous_emote < current_emote_page * max_emotes_on_page)
-            {
-                // Change to previous page
-                if (current_emote_page > 0)
-                {
-                    --current_emote_page;
-                    set_emote_page();
-                }
-            }
-            select_emote(previous_emote);
+
+    if (keySequence == QKeySequence(Qt::ALT | Qt::Key_Left)) {
+      int previous_emote = current_emote - 1;
+      if (previous_emote >= 0) {
+        if (previous_emote < current_emote_page * max_emotes_on_page) {
+          // Change to previous page
+          if (current_emote_page > 0) {
+            --current_emote_page;
+            set_emote_page();
+          }
         }
+        select_emote(previous_emote);
+      }
     }
-    else if (keySequence == QKeySequence(Qt::ALT + Qt::Key_Right))
-    {
-        int next_emote = current_emote + 1;
-        if (next_emote < total_emotes)
-        {
-            if (next_emote >= (current_emote_page + 1) * max_emotes_on_page)
-            {
-                // Change to next page
-                if (current_emote_page < total_pages)
-                {
-                    ++current_emote_page;
-                    set_emote_page();
-                }
-            }
-            select_emote(next_emote);
+    else if (keySequence == QKeySequence(Qt::ALT | Qt::Key_Right)) {
+      int next_emote = current_emote + 1;
+      if (next_emote < total_emotes) {
+        if (next_emote >= (current_emote_page + 1) * max_emotes_on_page) {
+          // Change to next page
+          if (current_emote_page < total_pages) {
+            ++current_emote_page;
+            set_emote_page();
+          }
         }
+        select_emote(next_emote);
+      }
     }
-    if (keySequence == QKeySequence(Qt::ALT + Qt::Key_Down))
-    {
-    if (total_pages > current_emote_page)
-      ++current_emote_page;
+    if (keySequence == QKeySequence(Qt::ALT | Qt::Key_Down)) {
+      if (total_pages > current_emote_page) ++current_emote_page;
       select_emote(current_emote_page * max_emotes_on_page);
       set_emote_page();
     }
-    else if (keySequence == QKeySequence(Qt::ALT + Qt::Key_Up))
-    {
-    if (current_emote_page > 0)
-      --current_emote_page;
+    else if (keySequence == QKeySequence(Qt::ALT | Qt::Key_Up)) {
+      if (current_emote_page > 0) --current_emote_page;
       select_emote(current_emote_page * max_emotes_on_page);
       // select_emote(current_emote / current_emote_page);
       set_emote_page();
@@ -318,32 +310,33 @@ void Courtroom::show_emote_menu(const QPoint &pos)
 
   QString f_emote = ao_app->get_emote(current_char, emote_num);
 
-  emote_menu->setDefaultAction(emote_menu->addAction("Add to Emote Queue", this, [=]{
-    QString emote = " ¨<" + f_emote + ">¨ ";
-    
-    if (ui_ic_chat_message->hasFocus()) {
-        QTextCursor cursor = ui_ic_chat_message->textCursor();
-        int cursorPosition = cursor.position();
-    
-        cursor.insertText(emote);
-    
-        cursor.setPosition(cursorPosition + emote.length() + 1);
-        ui_ic_chat_message->setTextCursor(cursor);
-    } else {
-        QTextCursor cursor = ui_ic_chat_message->textCursor();
-        QString temp_text = ui_ic_chat_message->toPlainText();
-        temp_text += emote;
-        ui_ic_chat_message->setPlainText(temp_text);
-        cursor.movePosition(QTextCursor::End);
-        ui_ic_chat_message->setTextCursor(cursor);
-       }
-    ui_ic_chat_message->setFocus();
-     }
-  ));
+  emote_menu->setDefaultAction(
+      emote_menu->addAction("Add to Emote Queue", this, [=, this] {
+        QString emote = " ¨<" + f_emote + ">¨ ";
+
+        if (ui_ic_chat_message->hasFocus()) {
+          QTextCursor cursor = ui_ic_chat_message->textCursor();
+          int cursorPosition = cursor.position();
+
+          cursor.insertText(emote);
+
+          cursor.setPosition(cursorPosition + emote.length() + 1);
+          ui_ic_chat_message->setTextCursor(cursor);
+        }
+        else {
+          QTextCursor cursor = ui_ic_chat_message->textCursor();
+          QString temp_text = ui_ic_chat_message->toPlainText();
+          temp_text += emote;
+          ui_ic_chat_message->setPlainText(temp_text);
+          cursor.movePosition(QTextCursor::End);
+          ui_ic_chat_message->setTextCursor(cursor);
+        }
+        ui_ic_chat_message->setFocus();
+      }));
 
   emote_menu->addSeparator();
-  
-  emote_menu->addAction("Preview Selected", this, [=]{
+
+  emote_menu->addAction("Preview Selected", this, [=, this] {
     emote_preview->show();
     emote_preview->raise();
     emote_preview->set_widgets();
@@ -352,19 +345,23 @@ void Courtroom::show_emote_menu(const QPoint &pos)
   QString prefix = "";
   QString f_pre = ao_app->get_pre_emote(current_char, emote_num);
   if (!f_pre.isEmpty() && f_pre != "-") {
-    emote_menu->addAction("Preview pre: " + f_pre, this, [=]{ preview_emote(f_pre); });
+    emote_menu->addAction("Preview pre: " + f_pre, this,
+                          [=, this] { preview_emote(f_pre); });
   }
 
   if (!f_emote.isEmpty()) {
-    emote_menu->addAction("Preview idle: " + f_emote, this, [=]{ preview_emote("(a)" + f_emote); });
-    emote_menu->addAction("Preview talk: " + f_emote, this, [=]{ preview_emote("(b)" + f_emote); });
+    emote_menu->addAction("Preview idle: " + f_emote, this,
+                          [=, this] { preview_emote("(a)" + f_emote); });
+    emote_menu->addAction("Preview talk: " + f_emote, this,
+                          [=, this] { preview_emote("(b)" + f_emote); });
     QStringList c_paths = {
       ao_app->get_image_suffix(ao_app->get_character_path(current_char, "(c)" + f_emote)),
       ao_app->get_image_suffix(ao_app->get_character_path(current_char, "(c)/" + f_emote))
       };
     // if there is a (c) animation
     if (file_exists(ui_vp_player_char->find_image(c_paths))) {
-      emote_menu->addAction("Preview segway: " + f_emote, this, [=]{ preview_emote("(c)" + f_emote); });
+      emote_menu->addAction("Preview segway: " + f_emote, this,
+                            [=, this] { preview_emote("(c)" + f_emote); });
     }
   }
   emote_menu->popup(button->mapToGlobal(pos));

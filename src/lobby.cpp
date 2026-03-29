@@ -493,7 +493,7 @@ void Lobby::list_servers()
   ui_serverlist_search->setText("");
 
   int i = 0;
-  for (const server_type &i_server : qAsConst(ao_app->get_server_list())) {
+  for (const server_type &i_server : std::as_const(ao_app->get_server_list())) {
     QTreeWidgetItem *treeItem = new QTreeWidgetItem(ui_serverlist_tree);
     treeItem->setData(0, Qt::DisplayRole, i);
     treeItem->setText(1, i_server.name);
