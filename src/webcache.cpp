@@ -239,7 +239,7 @@ void WebCache::onDownloadFinished(QNetworkReply *reply)
 
   if (reply->error() != QNetworkReply::NoError)
   {
-    qDebug() << "WebCache: Download failed for" << reply->url().toString() << "-" << reply->errorString();
+    qDebug() << "WebCache: Download failed for" << reply->url().toString(QUrl::EncodeSpaces) << "-" << reply->errorString();
     m_failed_downloads.insert(relativePath);
     reply->deleteLater();
     return;
@@ -249,7 +249,7 @@ void WebCache::onDownloadFinished(QNetworkReply *reply)
   int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
   if (statusCode != 200)
   {
-    qDebug() << "WebCache: Download returned status" << statusCode << "for" << reply->url().toString();
+    qDebug() << "WebCache: Download returned status" << statusCode << "for" << reply->url().toString(QUrl::EncodeSpaces);
     m_failed_downloads.insert(relativePath);
     reply->deleteLater();
     return;
