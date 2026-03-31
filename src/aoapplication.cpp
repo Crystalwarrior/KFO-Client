@@ -32,6 +32,18 @@ AOApplication::AOApplication(int &argc, char **argv) : QApplication(argc, argv)
 
   setApplicationVersion(get_version_string());
   setApplicationDisplayName(tr("Attorney Online Golden: %1").arg(applicationVersion()));
+
+  // Qt5 had hard-coded colors. Qt6 uses Windows accent color for several palette roles,
+  // which breaks AO's UI since it wasn't designed with that in mind. Hard-code the colors.
+
+  // Also use cyan link color as the more reasonable default(?)
+  qApp->setStyleSheet("QLabel a { color: #00FFFF; }");
+  QPalette fixedPalette = qApp->palette();
+  fixedPalette.setColor(QPalette::Link, QColor(0, 255, 255));
+  fixedPalette.setColor(QPalette::Highlight, QColor(0, 120, 215));
+  fixedPalette.setColor(QPalette::HighlightedText, QColor(255, 255, 255));
+  fixedPalette.setColor(QPalette::AlternateBase, QColor(25, 25, 25));
+  qApp->setPalette(fixedPalette);
 }
 
 AOApplication::~AOApplication()
@@ -168,7 +180,7 @@ void AOApplication::call_settings_menu(int initial_tab)
           connect(l_dialog, &AOOptionsDialog::reloadThemeRequest,
                   w_courtroom, &Courtroom::on_reload_theme_clicked);
       }
-  
+
       if(lobby_constructed) {
       }
       l_dialog->exec();
@@ -176,7 +188,7 @@ void AOApplication::call_settings_menu(int initial_tab)
 
     } catch (const std::exception &e) {
       qCritical() << "Exception caught:" << e.what();
-  
+
       QFile logFile("error.log");
       if (logFile.open(QIODevice::Append | QIODevice::Text)) {
           QTextStream stream(&logFile);
