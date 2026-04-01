@@ -28,6 +28,13 @@ signals:
    */
   void fileDownloaded(const QString &relativePath);
 
+  /**
+   * @brief Emitted when a file has failed to download.
+   * @param relativePath The lowercase relative path of the cached file (e.g., "characters/phoenix/char_icon.png")
+   */
+  void downloadFailed(const QString &relativePath);
+
+
 public:
   /**
    * @brief Returns the cached file path if it exists and is not expired.
@@ -41,8 +48,9 @@ public:
    * @brief Check cache and initiate async download if file is missing or expired.
    * @param relativePath The virtual path relative to the base.
    * @param suffixes List of file extensions to try (e.g., {"", ".opus", ".wav"})
+   * @return True if the download is started, False otherwise
    */
-  void resolveOrDownload(const QString &relativePath, const QStringList &suffixes = {""});
+  bool resolveOrDownload(const QString &relativePath, const QStringList &suffixes = {""});
 
   /**
    * @brief Clears the entire webcache directory.
@@ -65,6 +73,11 @@ public:
    * @brief Returns the webcache directory path.
    */
   QString cacheDir() const;
+
+  /**
+   * @brief Return the number of pending downloads
+   */
+  int pendingDownloads() const;
 
 private slots:
   void onDownloadFinished(QNetworkReply *reply);

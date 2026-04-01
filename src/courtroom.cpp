@@ -176,7 +176,7 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   connect(ao_app, &AOApplication::qt_log_message,
           this, &Courtroom::debug_message_handler);
   connect(ao_app->webcache(), &WebCache::fileDownloaded, this, &Courtroom::on_webcache_file_downloaded);
-
+  connect(ao_app->webcache(), &WebCache::downloadFailed, this, &Courtroom::on_webcache_download_failed);
   ui_server_chatlog = new AOTextArea(this);
   ui_server_chatlog->setReadOnly(true);
   ui_server_chatlog->setOpenExternalLinks(true);
@@ -2638,11 +2638,41 @@ void Courtroom::chatmessage_dequeue()
   if (chatmessage_queue.isEmpty())
     return;
 
+  // A chatmessage is already pending to be unpacked
+  if (!pending_chatmessage.isEmpty())
+    return;
+
   // Stop the text queue timer
   if (text_queue_timer->isActive())
     text_queue_timer->stop();
 
-  unpack_chatmessage(chatmessage_queue.dequeue());
+  // Before unpacking, make sure the asset can be initialized and web download is necessary (prefetch necessary content paths)
+  pending_chatmessage = chatmessage_queue.dequeue();
+
+  // Begin the logic for downloading the webcache assets, test if any downloads have actually started. If not, just unpack the chatmessage.
+  int dl_count = 0;
+  if (Options::getInstance().webcacheEnabled())
+  {
+    // download the main player
+    dl_count += ui_vp_player_char->download_image(m_chatmessage[PRE_EMOTE], m_chatmessage[CHAR_NAME], true);
+    dl_count += ui_vp_player_char->download_image("(b)" + m_chatmessage[EMOTE], m_chatmessage[CHAR_NAME], false);
+    dl_count += ui_vp_player_char->download_image("(a)" + m_chatmessage[EMOTE], m_chatmessage[CHAR_NAME], false);
+
+    // pairing madness
+    if (!m_chatmessage[OTHER_CHARID].isEmpty())
+        dl_count += ui_vp_sideplayer_char->download_image("(b)" + m_chatmessage[OTHER_EMOTE], m_chatmessage[OTHER_NAME], false);
+    if (!m_chatmessage[THIRD_CHARID].isEmpty())
+        dl_count += ui_vp_thirdplayer_char->download_image("(a)" + m_chatmessage[THIRD_EMOTE], m_chatmessage[THIRD_NAME], false);
+
+    qDebug() << "WebCache: " << dl_count << " downloads started. Delaying the queue";
+    // If even a single download started, we need to delay the unpacking
+    // (on_webcache_file_downloaded, on_webcache_download_failed signals handle the rest)
+    if (dl_count > 0)
+        return;
+  }
+  // Downloading not necessary. Skip the webcache wait.
+  unpack_chatmessage(pending_chatmessage);
+  pending_chatmessage.clear();
 }
 
 void Courtroom::skip_chatmessage_queue()
@@ -7000,4 +7030,21 @@ void Courtroom::on_webcache_file_downloaded(const QString &relativePath)
       }
     }
   }
+
+  // beyond this point is the message queue logic
+  if (pending_chatmessage.isEmpty() || ao_app->webcache()->pendingDownloads() > 0)
+    return;
+  // Process the finalized chat message (we ran out of pending downloads)
+  unpack_chatmessage(pending_chatmessage);
+  pending_chatmessage.clear();
+}
+
+void Courtroom::on_webcache_download_failed(const QString &relativePath)
+{
+  // beyond this point is the message queue logic
+  if (pending_chatmessage.isEmpty() || ao_app->webcache()->pendingDownloads() > 0)
+    return;
+  // Process the finalized chat message (we ran out of pending downloads)
+  unpack_chatmessage(pending_chatmessage);
+  pending_chatmessage.clear();
 }

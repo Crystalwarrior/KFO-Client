@@ -54,7 +54,7 @@ WebCache::WebCache(AOApplication *parent)
     , ao_app(parent)
     , m_network_manager(new QNetworkAccessManager(this))
 {
-  connect(m_network_manager, &QNetworkAccessManager::finished, this, &WebCache::onDownloadFinished);
+  // connect(m_network_manager, &QNetworkAccessManager::finished, this, &WebCache::onDownloadFinished);
 }
 
 WebCache::~WebCache()
@@ -63,6 +63,11 @@ WebCache::~WebCache()
 QString WebCache::cacheDir() const
 {
   return QCoreApplication::applicationDirPath() + "/webcache/";
+}
+
+int WebCache::pendingDownloads() const
+{
+  return m_pending_downloads.size();
 }
 
 QString WebCache::cacheSubdir() const
@@ -137,30 +142,30 @@ bool WebCache::isExpired(const QString &localPath) const
   return QDateTime::currentDateTime() > expiryTime;
 }
 
-void WebCache::resolveOrDownload(const QString &relativePath, const QStringList &suffixes)
+bool WebCache::resolveOrDownload(const QString &relativePath, const QStringList &suffixes)
 {
   if (relativePath.isEmpty())
   {
-    return;
+    return false;
   }
 
   // Reject paths containing absolute paths (they shouldn't be passed to webcache)
   if (relativePath.startsWith('/') || relativePath.contains("//") || relativePath.contains(":/"))
   {
-    return;
+    return false;
   }
 
   // Check if webcache is enabled
   if (!Options::getInstance().webcacheEnabled())
   {
-    return;
+    return false;
   }
 
   // Check if server has an asset URL
   QString assetUrl = ao_app->asset_url;
   if (assetUrl.isEmpty())
   {
-    return;
+    return false;
   }
 
   // Ensure asset URL ends with /
@@ -173,7 +178,7 @@ void WebCache::resolveOrDownload(const QString &relativePath, const QStringList 
   QString subdir = cacheSubdir();
   if (subdir.isEmpty())
   {
-    return;
+    return false;
   }
 
   // Try each suffix (like webAO tries multiple extensions)
@@ -188,7 +193,7 @@ void WebCache::resolveOrDownload(const QString &relativePath, const QStringList 
     // Check if already downloading this path
     if (m_pending_downloads.contains(lowerPath))
     {
-      return;
+      return false;
     }
 
     // Check if this path previously failed (don't retry within this session)
@@ -203,7 +208,7 @@ void WebCache::resolveOrDownload(const QString &relativePath, const QStringList 
     // Skip if already cached and not expired
     if (file_exists(localPath) && !isExpired(localPath))
     {
-      return; // Already have a valid cached file
+      return false; // Already have a valid cached file
     }
 
     // Remote URL uses percent-encoded lowercase path
@@ -212,8 +217,9 @@ void WebCache::resolveOrDownload(const QString &relativePath, const QStringList 
     // Mark as pending and start download
     m_pending_downloads.insert(lowerPath, true);
     startDownload(remoteUrl, localPath, lowerPath);
-    return; // Only try one suffix at a time
+    return true; // Only try one suffix at a time
   }
+  return false;
 }
 
 void WebCache::startDownload(const QString &remoteUrl, const QString &localPath, const QString &relativePath)
@@ -226,11 +232,16 @@ void WebCache::startDownload(const QString &remoteUrl, const QString &localPath,
   request.setAttribute(static_cast<QNetworkRequest::Attribute>(QNetworkRequest::User + 1), relativePath);
 
   qDebug() << "WebCache: Downloading" << remoteUrl;
-  m_network_manager->get(request);
+  QNetworkReply *reply = m_network_manager->get(request);
+  QObject::connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+    qDebug() << "HELP ME";
+    onDownloadFinished(reply);
+  });
 }
 
 void WebCache::onDownloadFinished(QNetworkReply *reply)
 {
+  qDebug() << "WebCache: Download finished";
   QString localPath = reply->request().attribute(QNetworkRequest::User).toString();
   QString relativePath = reply->request().attribute(static_cast<QNetworkRequest::Attribute>(QNetworkRequest::User + 1)).toString();
 
@@ -240,6 +251,8 @@ void WebCache::onDownloadFinished(QNetworkReply *reply)
   if (reply->error() != QNetworkReply::NoError)
   {
     qDebug() << "WebCache: Download failed for" << reply->url().toString(QUrl::EncodeSpaces) << "-" << reply->errorString();
+    // Notify listeners that a file has failed to be downloaded
+    emit downloadFailed(relativePath);
     m_failed_downloads.insert(relativePath);
     reply->deleteLater();
     return;
@@ -250,6 +263,8 @@ void WebCache::onDownloadFinished(QNetworkReply *reply)
   if (statusCode != 200)
   {
     qDebug() << "WebCache: Download returned status" << statusCode << "for" << reply->url().toString(QUrl::EncodeSpaces);
+    // Notify listeners that a file has failed to be downloaded
+    emit downloadFailed(relativePath);
     m_failed_downloads.insert(relativePath);
     reply->deleteLater();
     return;
@@ -263,6 +278,8 @@ void WebCache::onDownloadFinished(QNetworkReply *reply)
     if (!dir.mkpath("."))
     {
       qWarning() << "WebCache: Failed to create directory" << dir.absolutePath();
+      // Notify listeners that a file has failed to be downloaded
+      emit downloadFailed(relativePath);
       reply->deleteLater();
       return;
     }
@@ -273,6 +290,8 @@ void WebCache::onDownloadFinished(QNetworkReply *reply)
   if (!file.open(QIODevice::WriteOnly))
   {
     qWarning() << "WebCache: Failed to open file for writing:" << localPath;
+    // Notify listeners that a file has failed to be downloaded
+    emit downloadFailed(relativePath);
     reply->deleteLater();
     return;
   }

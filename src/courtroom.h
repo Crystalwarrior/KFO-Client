@@ -480,6 +480,9 @@ private:
 
   QQueue<QStringList> chatmessage_queue;
 
+  // Pending chatmessage that is waiting on its downloads to finish
+  QStringList pending_chatmessage;
+
   // triggers ping_server() every 45 seconds
   QTimer *keepalive_timer;
 
@@ -1156,6 +1159,7 @@ private slots:
   void update_emote_preview();
 
   void on_webcache_file_downloaded(const QString &relativePath);
+  void on_webcache_download_failed(const QString &relativePath);
 };
 
 #endif // COURTROOM_H

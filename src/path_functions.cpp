@@ -46,6 +46,38 @@ VPath AOApplication::get_character_path(QString p_char, QString p_file)
   return VPath("characters/" + p_char + "/" + p_file);
 }
 
+QVector<VPath> AOApplication::get_emote_paths(QString p_filename, QString p_charname, bool p_is_preanim)
+{
+  QString p_prefix = "";
+  if (p_filename.left(3) == "(a)" || p_filename.left(3) == "(b)") { // if we are playing an idle or talking animation
+    p_prefix = p_filename.left(3); // separate the prefix from the emote name
+    p_filename = p_filename.mid(3, -1);
+  }
+  else if (p_is_preanim || p_filename.left(3) == "(c)") { // else if we are playing a preanim or postanim
+    if (p_filename.left(3) == "(c)") { // if we are playing a postanim
+      p_prefix = "(c)"; // separate the prefix from the emote name
+      p_filename = p_filename.mid(3, -1);
+    }
+  }
+  QVector<VPath> pathlist = { // cursed character path resolution vector
+    get_character_path(
+        p_charname, p_prefix + p_filename), // Default path
+    get_character_path(
+        p_charname,
+        p_prefix + "/" + p_filename), // Path check if it's categorized
+                                      // into a folder
+    get_character_path(
+        p_charname,
+        p_filename), // Just use the non-prefixed image, animated or not
+    VPath(p_filename), // The path by itself after the above fail
+    Options::getInstance().assetStreaming() ? VPath(asset_url + "characters/" + p_charname + "/" + p_filename) : VPath(), // Streamed assets path
+    get_theme_path("placeholder"), // Theme placeholder path
+    get_theme_path(
+        "placeholder", default_theme)};
+
+  return pathlist;
+}
+
 VPath AOApplication::get_misc_path(QString p_misc, QString p_file)
 {
   return VPath("misc/" + p_misc + "/" + p_file);

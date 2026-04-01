@@ -172,6 +172,30 @@ void BackgroundLayer::load_image(QString p_filename)
   play();
 }
 
+bool CharLayer::download_image(QString p_filename, QString p_charname, bool p_is_preanim)
+{
+  if (p_filename.isEmpty())
+    return false;
+  QVector<VPath> pathlist = ao_app->get_emote_paths(p_filename, p_charname, p_is_preanim);
+  QString resolved = ao_app->get_image_path(pathlist);
+
+  int dl_count = 0;
+  // Trigger webcache download if actual character emote not found (fell back to placeholder or not found)
+  if ((resolved.isEmpty() || resolved.contains("/placeholder")) && Options::getInstance().webcacheEnabled())
+  {
+    static const QStringList image_suffixes{".webp", ".apng", ".gif", ".png"};
+    // Try downloading the character-specific paths (first 4 entries, before placeholder fallbacks)
+    for (int i = 0; i < 4 && i < pathlist.size(); ++i)
+    {
+      if (!pathlist[i].toQString().isEmpty())
+      {
+        dl_count += ao_app->webcache()->resolveOrDownload(pathlist[i].toQString(), image_suffixes);
+      }
+    }
+  }
+  return dl_count > 0;
+}
+
 void CharLayer::load_image(QString p_filename, QString p_charname,
                            int p_duration, bool p_is_preanim)
 {
@@ -221,36 +245,8 @@ void CharLayer::load_image(QString p_filename, QString p_charname,
            << current_emote << " from character: " << p_charname
            << " continuous: " << continuous;
 #endif
-  QVector<VPath> pathlist { // cursed character path resolution vector
-      ao_app->get_character_path(
-          p_charname, prefix + current_emote), // Default path
-      ao_app->get_character_path(
-          p_charname,
-          prefix + "/" + current_emote), // Path check if it's categorized
-                                          // into a folder
-      ao_app->get_character_path(
-          p_charname,
-          current_emote), // Just use the non-prefixed image, animated or not
-      VPath(current_emote), // The path by itself after the above fail
-      Options::getInstance().assetStreaming() ? VPath(ao_app->asset_url + "characters/" + p_charname + "/" + current_emote) : VPath(), // Streamed assets path
-      ao_app->get_theme_path("placeholder"), // Theme placeholder path
-      ao_app->get_theme_path(
-          "placeholder", ao_app->default_theme)}; // Default theme placeholder path
+  QVector<VPath> pathlist = ao_app->get_emote_paths(p_filename, p_charname, p_is_preanim);
   QString resolved = ao_app->get_image_path(pathlist);
-
-  // Trigger webcache download if actual character emote not found (fell back to placeholder or not found)
-  if ((resolved.isEmpty() || resolved.contains("/placeholder")) && Options::getInstance().webcacheEnabled())
-  {
-    static const QStringList image_suffixes{".webp", ".apng", ".gif", ".png"};
-    // Try downloading the character-specific paths (first 4 entries, before placeholder fallbacks)
-    for (int i = 0; i < 4 && i < pathlist.size(); ++i)
-    {
-      if (!pathlist[i].toQString().isEmpty())
-      {
-        ao_app->webcache()->resolveOrDownload(pathlist[i].toQString(), image_suffixes);
-      }
-    }
-  }
 
   start_playback(resolved);
   play();

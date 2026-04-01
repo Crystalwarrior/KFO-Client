@@ -204,7 +204,7 @@ void Courtroom::char_clicked(int n_char)
         QPushButton* btn3 = msgBox.addButton(tr("Cancel"), QMessageBox::RejectRole);
         msgBox.setDefaultButton(btn3);
         msgBox.exec();
-    
+
         if (msgBox.clickedButton() == btn1) {
             // I WILL change this later...
             QString download_path = VPath(ao_app->asset_url + "characters/" + char_name + "/").toQString();

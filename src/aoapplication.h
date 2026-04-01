@@ -160,6 +160,7 @@ public:
   // implementation in path_functions.cpp
   VPath get_theme_path(QString p_file, QString p_theme="");
   VPath get_character_path(QString p_char, QString p_file);
+  QVector<VPath> get_emote_paths(QString p_filename, QString p_charname, bool p_is_preanim);
   VPath get_misc_path(QString p_misc, QString p_file);
   VPath get_sounds_path(QString p_file);
   VPath get_music_path(QString p_song);
