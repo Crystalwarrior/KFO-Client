@@ -160,14 +160,6 @@ void BackgroundLayer::load_image(QString p_filename)
     return;
   }
 
-  // Trigger webcache download if file not found locally
-  VPath vpath = ao_app->get_background_path(p_filename);
-  QString file_path = ao_app->get_image_suffix(vpath);
-  if (file_path.isEmpty() && Options::getInstance().webcacheEnabled())
-  {
-    ao_app->webcache()->resolveOrDownload(vpath.toQString(), {".webp", ".apng", ".gif", ".png"});
-  }
-
   start_playback(p_filename);
   play();
 }
@@ -187,9 +179,25 @@ bool CharLayer::download_image(QString p_filename, QString p_charname, bool p_is
     // Try downloading the character-specific paths (first 4 entries, before placeholder fallbacks)
     for (int i = 0; i < 4 && i < pathlist.size(); ++i)
     {
-      if (!pathlist[i].toQString().isEmpty())
+      QString path = pathlist[i].toQString();
+      if (!path.isEmpty())
       {
-        dl_count += ao_app->webcache()->resolveOrDownload(pathlist[i].toQString(), image_suffixes);
+        QString lowerPath = ao_app->webcache()->resolve(path, image_suffixes);
+        if (!lowerPath.isEmpty())
+        {
+          QString assetUrl = ao_app->asset_url;
+
+          // Local path uses lowercase without percent-encoding
+          QString localPath = ao_app->webcache()->cacheDir() + ao_app->webcache()->cacheSubdir() + lowerPath;
+
+          // Ensure asset URL ends with /
+          if (!assetUrl.endsWith('/'))
+          {
+            assetUrl += '/';
+          }
+          ao_app->webcache()->startDownload(assetUrl + ao_app->urlEncodePath(lowerPath), localPath, lowerPath);
+          dl_count += 1;
+        }
       }
     }
   }

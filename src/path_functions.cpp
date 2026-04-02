@@ -485,3 +485,39 @@ void AOApplication::invalidate_lookup_cache() {
   dir_listing_cache.clear();
   dir_listing_exist_cache.clear();
 }
+
+// Lowercase path components (for local storage)
+QString AOApplication::lowercasePath(const QString &path)
+{
+  QStringList components = path.split('/');
+  QStringList result;
+  for (const QString &component : components)
+  {
+    if (component.isEmpty())
+    {
+      continue;
+    }
+    result.append(component.toLower());
+  }
+  return result.join('/');
+}
+
+// URL-encode path for web requests (like webAO's encodeURI)
+// Uses encodeURI-compatible encoding (preserves safe characters like ! ' ( ) *)
+QString AOApplication::urlEncodePath(const QString &path)
+{
+  QStringList components = path.split('/');
+  QStringList encoded;
+  // Characters that encodeURI does NOT encode (excluding / which we handle via split)
+  const QByteArray safeChars = ";,?:@&=+$-_.!~*'()#";
+  for (const QString &component : components)
+  {
+    if (component.isEmpty())
+    {
+      continue;
+    }
+    QString percentEncoded = QUrl::toPercentEncoding(component, safeChars);
+    encoded.append(percentEncoded);
+  }
+  return encoded.join('/');
+}

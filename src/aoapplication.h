@@ -181,6 +181,8 @@ public:
   QString get_case_sensitive_path(QString p_file);
   QString get_real_path(const VPath &vpath, const QStringList &suffixes={""});
   void invalidate_lookup_cache();
+  QString lowercasePath(const QString &path);
+  QString urlEncodePath(const QString &path);
 
   ////// Functions for reading and writing files //////
   // Implementations file_functions.cpp

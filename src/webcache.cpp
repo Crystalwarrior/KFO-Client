@@ -10,51 +10,12 @@
 #include <QNetworkRequest>
 #include <QUrl>
 
-namespace
-{
-// Lowercase path components (for local storage)
-QString lowercasePath(const QString &path)
-{
-  QStringList components = path.split('/');
-  QStringList result;
-  for (const QString &component : components)
-  {
-    if (component.isEmpty())
-    {
-      continue;
-    }
-    result.append(component.toLower());
-  }
-  return result.join('/');
-}
-
-// URL-encode path for web requests (like webAO's encodeURI)
-// Uses encodeURI-compatible encoding (preserves safe characters like ! ' ( ) *)
-QString urlEncodePath(const QString &path)
-{
-  QStringList components = path.split('/');
-  QStringList encoded;
-  // Characters that encodeURI does NOT encode (excluding / which we handle via split)
-  const QByteArray safeChars = ";,?:@&=+$-_.!~*'()#";
-  for (const QString &component : components)
-  {
-    if (component.isEmpty())
-    {
-      continue;
-    }
-    QString percentEncoded = QUrl::toPercentEncoding(component, safeChars);
-    encoded.append(percentEncoded);
-  }
-  return encoded.join('/');
-}
-} // namespace
-
 WebCache::WebCache(AOApplication *parent)
     : QObject(parent)
     , ao_app(parent)
     , m_network_manager(new QNetworkAccessManager(this))
 {
-  // connect(m_network_manager, &QNetworkAccessManager::finished, this, &WebCache::onDownloadFinished);
+  connect(m_network_manager, &QNetworkAccessManager::finished, this, &WebCache::onDownloadFinished);
 }
 
 WebCache::~WebCache()
@@ -109,7 +70,7 @@ QString WebCache::getCachedPath(const QString &relativePath, const QStringList &
   for (const QString &suffix : effectiveSuffixes)
   {
     // Use lowercase path for cache lookup (no percent-encoding in local paths)
-    QString lowerPath = lowercasePath(relativePath + suffix);
+    QString lowerPath = ao_app->lowercasePath(relativePath + suffix);
     QString localPath = cacheDir() + subdir + lowerPath;
 
     if (!file_exists(localPath))
@@ -142,30 +103,30 @@ bool WebCache::isExpired(const QString &localPath) const
   return QDateTime::currentDateTime() > expiryTime;
 }
 
-bool WebCache::resolveOrDownload(const QString &relativePath, const QStringList &suffixes)
+QString WebCache::resolve(const QString &relativePath, const QStringList &suffixes)
 {
   if (relativePath.isEmpty())
   {
-    return false;
+    return "";
   }
 
   // Reject paths containing absolute paths (they shouldn't be passed to webcache)
   if (relativePath.startsWith('/') || relativePath.contains("//") || relativePath.contains(":/"))
   {
-    return false;
+    return "";
   }
 
   // Check if webcache is enabled
   if (!Options::getInstance().webcacheEnabled())
   {
-    return false;
+    return "";
   }
 
   // Check if server has an asset URL
   QString assetUrl = ao_app->asset_url;
   if (assetUrl.isEmpty())
   {
-    return false;
+    return "";
   }
 
   // Ensure asset URL ends with /
@@ -178,7 +139,7 @@ bool WebCache::resolveOrDownload(const QString &relativePath, const QStringList 
   QString subdir = cacheSubdir();
   if (subdir.isEmpty())
   {
-    return false;
+    return "";
   }
 
   // Try each suffix (like webAO tries multiple extensions)
@@ -188,12 +149,12 @@ bool WebCache::resolveOrDownload(const QString &relativePath, const QStringList 
     QString fullPath = relativePath + suffix;
 
     // Lowercase path for local storage and tracking (no percent-encoding)
-    QString lowerPath = lowercasePath(fullPath);
+    QString lowerPath = ao_app->lowercasePath(fullPath);
 
     // Check if already downloading this path
     if (m_pending_downloads.contains(lowerPath))
     {
-      return false;
+      return "";
     }
 
     // Check if this path previously failed (don't retry within this session)
@@ -208,22 +169,18 @@ bool WebCache::resolveOrDownload(const QString &relativePath, const QStringList 
     // Skip if already cached and not expired
     if (file_exists(localPath) && !isExpired(localPath))
     {
-      return false; // Already have a valid cached file
+      return ""; // Already have a valid cached file
     }
 
-    // Remote URL uses percent-encoded lowercase path
-    QString remoteUrl = assetUrl + urlEncodePath(lowerPath);
-
-    // Mark as pending and start download
-    m_pending_downloads.insert(lowerPath, true);
-    startDownload(remoteUrl, localPath, lowerPath);
-    return true; // Only try one suffix at a time
+    // Only try one suffix at a time
+    return lowerPath;
   }
-  return false;
+  return "";
 }
 
 void WebCache::startDownload(const QString &remoteUrl, const QString &localPath, const QString &relativePath)
 {
+  m_pending_downloads.insert(relativePath, true);
   QNetworkRequest request{QUrl(remoteUrl)};
   request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
 
@@ -232,11 +189,7 @@ void WebCache::startDownload(const QString &remoteUrl, const QString &localPath,
   request.setAttribute(static_cast<QNetworkRequest::Attribute>(QNetworkRequest::User + 1), relativePath);
 
   qDebug() << "WebCache: Downloading" << remoteUrl;
-  QNetworkReply *reply = m_network_manager->get(request);
-  QObject::connect(reply, &QNetworkReply::finished, this, [this, reply]() {
-    qDebug() << "HELP ME";
-    onDownloadFinished(reply);
-  });
+  m_network_manager->get(request);
 }
 
 void WebCache::onDownloadFinished(QNetworkReply *reply)

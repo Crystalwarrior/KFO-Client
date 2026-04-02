@@ -45,12 +45,17 @@ public:
   QString getCachedPath(const QString &relativePath, const QStringList &suffixes = {""}) const;
 
   /**
-   * @brief Check cache and initiate async download if file is missing or expired.
+   * @brief Check cache for the download.
    * @param relativePath The virtual path relative to the base.
    * @param suffixes List of file extensions to try (e.g., {"", ".opus", ".wav"})
-   * @return True if the download is started, False otherwise
+   * @return Lowercase path directing to the correct suffix, empty string otherwise
    */
-  bool resolveOrDownload(const QString &relativePath, const QStringList &suffixes = {""});
+  QString resolve(const QString &relativePath, const QStringList &suffixes = {""});
+
+  /**
+   * @brief Initiates an async download for the given remote URL.
+   */
+  void startDownload(const QString &remoteUrl, const QString &localPath, const QString &relativePath);
 
   /**
    * @brief Clears the entire webcache directory.
@@ -79,6 +84,11 @@ public:
    */
   int pendingDownloads() const;
 
+  /**
+   * @brief Returns the cache subdirectory for the current server's asset URL.
+   * E.g., "https://direct.grave.wine/base/" -> "direct.grave.wine/base/"
+   */
+  QString cacheSubdir() const;
 private slots:
   void onDownloadFinished(QNetworkReply *reply);
 
@@ -91,17 +101,6 @@ private:
 
   // Track failed downloads to avoid retrying them repeatedly
   QSet<QString> m_failed_downloads;
-
-  /**
-   * @brief Returns the cache subdirectory for the current server's asset URL.
-   * E.g., "https://direct.grave.wine/base/" -> "direct.grave.wine/base/"
-   */
-  QString cacheSubdir() const;
-
-  /**
-   * @brief Initiates an async download for the given remote URL.
-   */
-  void startDownload(const QString &remoteUrl, const QString &localPath, const QString &relativePath);
 
   /**
    * @brief Calculates directory size recursively.
