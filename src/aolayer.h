@@ -178,6 +178,9 @@ class BackgroundLayer : public AOLayer {
   Q_OBJECT
 public:
   BackgroundLayer(QWidget *p_parent, AOApplication *p_ao_app);
+  // returns true if download is needed or not
+  bool download_image(QString p_filename);
+
   void load_image(QString p_filename);
 signals:
   void hide_void();
@@ -193,6 +196,9 @@ public:
   bool is_preanim;     // equivalent to the old play_once, if true we don't want
                        // to loop this
   QString prefix = ""; // prefix, left blank if it's a preanim
+
+  // returns true if download is needed or not
+  bool download_image(QString p_filename, QString p_charname, bool p_is_preanim);
 
   void load_image(QString p_filename, QString p_charname, int p_duration, bool p_is_preanim);
   void play(); // overloaded so we can play effects

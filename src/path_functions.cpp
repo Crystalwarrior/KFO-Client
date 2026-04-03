@@ -2,6 +2,7 @@
 #include "courtroom.h"
 #include "file_functions.h"
 #include "options.h"
+#include "webcache.h"
 
 #include <QDir>
 #include <QRegularExpression>
@@ -43,6 +44,38 @@ VPath AOApplication::get_character_path(QString p_char, QString p_file)
   //  qDebug() << path.toQString();
   // }
   return VPath("characters/" + p_char + "/" + p_file);
+}
+
+QVector<VPath> AOApplication::get_emote_paths(QString p_filename, QString p_charname, bool p_is_preanim)
+{
+  QString p_prefix = "";
+  if (p_filename.left(3) == "(a)" || p_filename.left(3) == "(b)") { // if we are playing an idle or talking animation
+    p_prefix = p_filename.left(3); // separate the prefix from the emote name
+    p_filename = p_filename.mid(3, -1);
+  }
+  else if (p_is_preanim || p_filename.left(3) == "(c)") { // else if we are playing a preanim or postanim
+    if (p_filename.left(3) == "(c)") { // if we are playing a postanim
+      p_prefix = "(c)"; // separate the prefix from the emote name
+      p_filename = p_filename.mid(3, -1);
+    }
+  }
+  QVector<VPath> pathlist = { // cursed character path resolution vector
+    get_character_path(
+        p_charname, p_prefix + p_filename), // Default path
+    get_character_path(
+        p_charname,
+        p_prefix + "/" + p_filename), // Path check if it's categorized
+                                      // into a folder
+    get_character_path(
+        p_charname,
+        p_filename), // Just use the non-prefixed image, animated or not
+    VPath(p_filename), // The path by itself after the above fail
+    Options::getInstance().assetStreaming() ? VPath(asset_url + "characters/" + p_charname + "/" + p_filename) : VPath(), // Streamed assets path
+    get_theme_path("placeholder"), // Theme placeholder path
+    get_theme_path(
+        "placeholder", default_theme)};
+
+  return pathlist;
 }
 
 VPath AOApplication::get_misc_path(QString p_misc, QString p_file)
@@ -426,14 +459,21 @@ QString AOApplication::get_real_path(const VPath &vpath,
     }
   }
 
+  // Check webcache if local file not found
+  if (Options::getInstance().webcacheEnabled() && !asset_url.isEmpty())
+  {
+    QString cached = m_webcache->getCachedPath(vpath.toQString(), suffixes);
+    if (!cached.isEmpty())
+    {
+      asset_lookup_cache.insert(qHash(vpath), cached);
+      return cached;
+    }
+  }
+
   // Not found in mount paths; check if the file is remote
   QString remotePath = vpath.toQString();
   if (remotePath.startsWith("http:") || remotePath.startsWith("https:")) {
       return remotePath;
-  // } else if (!asset_url.isEmpty()) { // Reminder to change this later
-  //    remotePath = asset_url + remotePath;
-  //    qDebug() << "Remote path: " << remotePath;
-  //    return QString();
   }
 
   // File or directory not found
@@ -444,4 +484,40 @@ void AOApplication::invalidate_lookup_cache() {
   asset_lookup_cache.clear();
   dir_listing_cache.clear();
   dir_listing_exist_cache.clear();
+}
+
+// Lowercase path components (for local storage)
+QString AOApplication::lowercasePath(const QString &path)
+{
+  QStringList components = path.split('/');
+  QStringList result;
+  for (const QString &component : components)
+  {
+    if (component.isEmpty())
+    {
+      continue;
+    }
+    result.append(component.toLower());
+  }
+  return result.join('/');
+}
+
+// URL-encode path for web requests (like webAO's encodeURI)
+// Uses encodeURI-compatible encoding (preserves safe characters like ! ' ( ) *)
+QString AOApplication::urlEncodePath(const QString &path)
+{
+  QStringList components = path.split('/');
+  QStringList encoded;
+  // Characters that encodeURI does NOT encode (excluding / which we handle via split)
+  const QByteArray safeChars = ";,?:@&=+$-_.!~*'()#";
+  for (const QString &component : components)
+  {
+    if (component.isEmpty())
+    {
+      continue;
+    }
+    QString percentEncoded = QUrl::toPercentEncoding(component, safeChars);
+    encoded.append(percentEncoded);
+  }
+  return encoded.join('/');
 }

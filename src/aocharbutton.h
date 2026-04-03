@@ -19,6 +19,8 @@ public:
 
   AOApplication *ao_app;
 
+  QString character;
+
   void refresh();
   void reset();
   void set_taken(bool is_taken);
@@ -36,6 +38,11 @@ private:
   AOImage *ui_taken;
   AOImage *ui_passworded;
   AOImage *ui_selector;
+
+  QString download_path;
+
+  void set_webpath(const QString &relativePath);
+  void set_image_path(const QString &image_path);
 
 protected:
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)

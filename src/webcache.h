@@ -1,0 +1,116 @@
+#ifndef WEBCACHE_H
+#define WEBCACHE_H
+
+#include <QDateTime>
+#include <QDir>
+#include <QHash>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QObject>
+#include <QSet>
+#include <QString>
+#include <QVector>
+
+class AOApplication;
+
+class WebCache : public QObject
+{
+  Q_OBJECT
+
+public:
+  explicit WebCache(AOApplication *parent);
+  ~WebCache();
+
+signals:
+  /**
+   * @brief Emitted when a file has been successfully downloaded and cached.
+   * @param relativePath The lowercase relative path of the cached file (e.g., "characters/phoenix/char_icon.png")
+   */
+  void fileDownloaded(const QString &relativePath);
+
+  /**
+   * @brief Emitted when a file has failed to download.
+   * @param relativePath The lowercase relative path of the cached file (e.g., "characters/phoenix/char_icon.png")
+   */
+  void downloadFailed(const QString &relativePath);
+
+
+public:
+  /**
+   * @brief Returns the cached file path if it exists and is not expired.
+   * @param relativePath The virtual path relative to the base (e.g., "sounds/music/song.mp3")
+   * @param suffixes List of file extensions to try (e.g., {".png", ".webp"})
+   * @return The absolute path to the cached file, or empty string if not cached/expired.
+   */
+  QString getCachedPath(const QString &relativePath, const QStringList &suffixes = {""}) const;
+
+  /**
+   * @brief Check cache for the download.
+   * @param relativePath The virtual path relative to the base.
+   * @param suffixes List of file extensions to try (e.g., {"", ".opus", ".wav"})
+   * @return Lowercase path directing to the correct suffix, empty string otherwise
+   */
+  QString resolve(const QString &relativePath, const QStringList &suffixes = {""});
+
+  /**
+   * @brief Helper function to call startDownload w/ all the necessary adjustments needed from just the relativePath
+   */
+  void download(const QString &relativePath);
+
+  /**
+   * @brief Initiates an async download for the given remote URL.
+   */
+  void startDownload(const QString &remoteUrl, const QString &localPath, const QString &relativePath);
+
+  /**
+   * @brief Clears the entire webcache directory.
+   */
+  void clearCache();
+
+  /**
+   * @brief Returns the total size of the webcache directory in bytes.
+   */
+  qint64 getCacheSize() const;
+
+  /**
+   * @brief Checks if a cached file has expired based on its modification time.
+   * @param localPath The absolute path to the cached file.
+   * @return True if the file is expired, false otherwise.
+   */
+  bool isExpired(const QString &localPath) const;
+
+  /**
+   * @brief Returns the webcache directory path.
+   */
+  QString cacheDir() const;
+
+  /**
+   * @brief Return the number of pending downloads
+   */
+  int pendingDownloads() const;
+
+  /**
+   * @brief Returns the cache subdirectory for the current server's asset URL.
+   * E.g., "https://direct.grave.wine/base/" -> "direct.grave.wine/base/"
+   */
+  QString cacheSubdir() const;
+private slots:
+  void onDownloadFinished(QNetworkReply *reply);
+
+private:
+  AOApplication *ao_app;
+  QNetworkAccessManager *m_network_manager;
+
+  // Track pending downloads to avoid duplicate requests
+  QHash<QString, bool> m_pending_downloads;
+
+  // Track failed downloads to avoid retrying them repeatedly
+  QSet<QString> m_failed_downloads;
+
+  /**
+   * @brief Calculates directory size recursively.
+   */
+  qint64 calculateDirSize(const QDir &dir) const;
+};
+
+#endif // WEBCACHE_H

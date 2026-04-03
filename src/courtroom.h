@@ -480,6 +480,9 @@ private:
 
   QQueue<QStringList> chatmessage_queue;
 
+  // Pending chatmessage that is waiting on its downloads to finish
+  QStringList pending_chatmessage;
+
   // triggers ping_server() every 45 seconds
   QTimer *keepalive_timer;
 
@@ -957,6 +960,11 @@ private:
   void reset_ui();
 
   void regenerate_ic_chatlog();
+
+  bool download_char_ini(QString char_name);
+
+  void set_charname(QString char_name);
+
 public slots:
   void objection_done();
   void preanim_done();
@@ -1154,6 +1162,9 @@ private slots:
 
   void preview_emote(QString emote);
   void update_emote_preview();
+
+  void on_webcache_file_downloaded(const QString &relativePath);
+  void on_webcache_download_failed(const QString &relativePath);
 };
 
 #endif // COURTROOM_H

@@ -1,5 +1,6 @@
 #include "courtroom.h"
 #include "options.h"
+#include "webcache.h"
 
 #include <QActionGroup>
 
@@ -174,7 +175,8 @@ Courtroom::Courtroom(AOApplication *p_ao_app) : QMainWindow()
   ui_debug_log->setObjectName("ui_debug_log");
   connect(ao_app, &AOApplication::qt_log_message,
           this, &Courtroom::debug_message_handler);
-
+  connect(ao_app->webcache(), &WebCache::fileDownloaded, this, &Courtroom::on_webcache_file_downloaded);
+  connect(ao_app->webcache(), &WebCache::downloadFailed, this, &Courtroom::on_webcache_download_failed);
   ui_server_chatlog = new AOTextArea(this);
   ui_server_chatlog->setReadOnly(true);
   ui_server_chatlog->setOpenExternalLinks(true);
@@ -2636,11 +2638,57 @@ void Courtroom::chatmessage_dequeue()
   if (chatmessage_queue.isEmpty())
     return;
 
+  // A chatmessage is already pending to be unpacked
+  if (!pending_chatmessage.isEmpty())
+    return;
+
   // Stop the text queue timer
   if (text_queue_timer->isActive())
     text_queue_timer->stop();
 
-  unpack_chatmessage(chatmessage_queue.dequeue());
+  // Before unpacking, make sure the asset can be initialized and web download is necessary (prefetch necessary content paths)
+  pending_chatmessage = chatmessage_queue.dequeue();
+
+  // make sure it fits the ms maximum size so we can actually access these properties
+  pending_chatmessage.resize(MS_MAXIMUM);
+
+  // Begin the logic for downloading the webcache assets, test if any downloads have actually started. If not, just unpack the chatmessage.
+  int dl_count = 0;
+  if (Options::getInstance().webcacheEnabled())
+  {
+    // background
+    QString side = pending_chatmessage[SIDE];
+    if (current_side.isEmpty()) {
+        side = ao_app->get_char_side(pending_chatmessage[CHAR_NAME]);
+    }
+    dl_count += ui_vp_background->download_image(ao_app->get_pos_path(side));
+    dl_count += ui_vp_desk->download_image(ao_app->get_pos_path(side, true));
+
+    // download their char ini
+    dl_count += download_char_ini(pending_chatmessage[CHAR_NAME]);
+
+    // download the main player
+    dl_count += ui_vp_player_char->download_image(pending_chatmessage[PRE_EMOTE], pending_chatmessage[CHAR_NAME], true);
+    dl_count += ui_vp_player_char->download_image("(b)" + pending_chatmessage[EMOTE], pending_chatmessage[CHAR_NAME], false);
+    dl_count += ui_vp_player_char->download_image("(a)" + pending_chatmessage[EMOTE], pending_chatmessage[CHAR_NAME], false);
+
+    // pairing madness
+    if (!pending_chatmessage[OTHER_CHARID].isEmpty())
+        dl_count += ui_vp_sideplayer_char->download_image("(b)" + pending_chatmessage[OTHER_EMOTE], pending_chatmessage[OTHER_NAME], false);
+    if (!pending_chatmessage[THIRD_CHARID].isEmpty())
+        dl_count += ui_vp_thirdplayer_char->download_image("(a)" + pending_chatmessage[THIRD_EMOTE], pending_chatmessage[THIRD_NAME], false);
+
+    // If even a single download started, we need to delay the unpacking
+    // (on_webcache_file_downloaded, on_webcache_download_failed signals handle the rest)
+    if (dl_count > 0)
+    {
+        qDebug() << "WebCache: " << dl_count << " downloads started. Delaying the queue";
+        return;
+    }
+  }
+  // Downloading not necessary. Skip the webcache wait.
+  unpack_chatmessage(pending_chatmessage);
+  pending_chatmessage.clear();
 }
 
 void Courtroom::skip_chatmessage_queue()
@@ -2655,6 +2703,8 @@ void Courtroom::skip_chatmessage_queue()
 
 void Courtroom::unpack_chatmessage(QStringList p_contents)
 {
+  // This is dumb and redundant.
+  // m_chatmessage shouldn't be individual QString vars, it can just be a QStringList
   for (int n_string = 0; n_string < MS_MAXIMUM; ++n_string) {
     // Note that we have added stuff that vanilla clients and servers simply
     // won't send. So now, we have to check if the thing we want even exists
@@ -6970,4 +7020,63 @@ Courtroom::~Courtroom()
   delete objection_player;
   delete blip_player;
   delete menu_bar;
+}
+
+void Courtroom::on_webcache_file_downloaded(const QString &relativePath)
+{
+  // Invalidate the asset lookup cache so future lookups find the cached file
+  // ao_app->invalidate_lookup_cache();
+  QString char_name;
+  if (relativePath.startsWith("characters/"))
+  {
+    // Extract character name from path: "characters/name/char.ini" -> "name"
+    QString charPath = relativePath.mid(11); // Remove "characters/"
+    int slashPos = charPath.indexOf('/');
+    if (slashPos > 0)
+    {
+      char_name = charPath.left(slashPos);
+    }
+  }
+
+  if (ui_char_select_background->isVisible() && relativePath.endsWith("/char.ini") && ao_app->net_manager->streamed_charname == char_name)
+  {
+    set_charname(char_name);
+  }
+
+  // beyond this point is the message queue logic
+  if (pending_chatmessage.isEmpty() || ao_app->webcache()->pendingDownloads() > 0)
+    return;
+  // Process the finalized chat message (we ran out of pending downloads)
+  unpack_chatmessage(pending_chatmessage);
+  pending_chatmessage.clear();
+}
+
+void Courtroom::on_webcache_download_failed(const QString &relativePath)
+{
+  // beyond this point is the message queue logic
+  if (pending_chatmessage.isEmpty() || ao_app->webcache()->pendingDownloads() > 0)
+    return;
+  // Process the finalized chat message (we ran out of pending downloads)
+  unpack_chatmessage(pending_chatmessage);
+  pending_chatmessage.clear();
+}
+
+bool Courtroom::download_char_ini(QString char_name)
+{
+    if (!Options::getInstance().webcacheEnabled() || ao_app->asset_url.isEmpty())
+    {
+      return false;
+    }
+    VPath char_ini_vpath = ao_app->get_character_path(char_name, "char.ini");
+    QString char_ini_path = ao_app->get_real_path(char_ini_vpath);
+
+    QString lowerPath = ao_app->webcache()->resolve(char_ini_vpath.toQString());
+    qDebug() << "WebCache: resolving char ini of " << char_ini_vpath.toQString();
+    if (lowerPath.isEmpty())
+    {
+        return false;
+    }
+    qDebug() << "WebCache: starting download of char ini " << lowerPath;
+    ao_app->webcache()->download(lowerPath);
+    return true;
 }

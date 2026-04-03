@@ -34,6 +34,7 @@ class NetworkManager;
 class Lobby;
 class Courtroom;
 class Options;
+class WebCache;
 
 class VPath : QString {
   using QString::QString;
@@ -65,6 +66,9 @@ public:
   Lobby *w_lobby;
   Courtroom *w_courtroom;
   AttorneyOnline::Discord *discord;
+
+  WebCache *webcache() const;
+
 
   QFont default_font;
 
@@ -156,6 +160,7 @@ public:
   // implementation in path_functions.cpp
   VPath get_theme_path(QString p_file, QString p_theme="");
   VPath get_character_path(QString p_char, QString p_file);
+  QVector<VPath> get_emote_paths(QString p_filename, QString p_charname, bool p_is_preanim);
   VPath get_misc_path(QString p_misc, QString p_file);
   VPath get_sounds_path(QString p_file);
   VPath get_music_path(QString p_song);
@@ -176,6 +181,8 @@ public:
   QString get_case_sensitive_path(QString p_file);
   QString get_real_path(const VPath &vpath, const QStringList &suffixes={""});
   void invalidate_lookup_cache();
+  QString lowercasePath(const QString &path);
+  QString urlEncodePath(const QString &path);
 
   ////// Functions for reading and writing files //////
   // Implementations file_functions.cpp
@@ -405,6 +412,7 @@ private:
   const int MINOR_VERSION = 1;
   const int HOTFIX = 0;
 
+  WebCache *m_webcache = nullptr;
   QVector<server_type> server_list;
   QHash<uint, QString> asset_lookup_cache;
   QHash<uint, QString> dir_listing_cache;

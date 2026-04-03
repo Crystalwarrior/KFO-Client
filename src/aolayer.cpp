@@ -5,6 +5,7 @@
 #include "misc_functions.h"
 #include "networkmanager.h"
 #include "options.h"
+#include "webcache.h"
 
 static QThreadPool *thread_pool;
 
@@ -143,6 +144,23 @@ void AOLayer::move_and_center(int ax, int ay)
     center_pixmap(movie_frames[0]); // just use the first frame since dimensions are all that matter
 }
 
+bool BackgroundLayer::download_image(QString p_filename)
+{
+  // Trigger webcache download if file not found locally
+  VPath vpath = ao_app->get_background_path(p_filename);
+  QString file_path = ao_app->get_image_suffix(vpath);
+  if (file_path.isEmpty() && Options::getInstance().webcacheEnabled())
+  {
+    QString lowerPath = ao_app->webcache()->resolve(vpath.toQString(), {".webp", ".apng", ".gif", ".png"});
+    if (!lowerPath.isEmpty())
+    {
+      ao_app->webcache()->download(lowerPath);
+      return true;
+    }
+  }
+  return false;
+}
+
 void BackgroundLayer::load_image(QString p_filename)
 {
   play_once = false;
@@ -161,6 +179,44 @@ void BackgroundLayer::load_image(QString p_filename)
 
   start_playback(p_filename);
   play();
+}
+
+bool CharLayer::download_image(QString p_filename, QString p_charname, bool p_is_preanim)
+{
+  QString test_path = p_filename;
+  // replace prefixes
+  QString prefix = p_filename.left(3);
+  if (prefix == "(a)" || prefix == "(b)" || prefix == "(c)")
+    test_path = test_path.mid(3, -1);
+  if (test_path == "-")
+    test_path = "";
+  if (test_path.isEmpty())
+    return false;
+  QVector<VPath> pathlist = ao_app->get_emote_paths(p_filename, p_charname, p_is_preanim);
+  QString resolved = ao_app->get_image_path(pathlist);
+
+  int dl_count = 0;
+  // Trigger webcache download if actual character emote not found (fell back to placeholder or not found)
+  if ((resolved.isEmpty() || resolved.contains("/placeholder")) && Options::getInstance().webcacheEnabled())
+  {
+    static const QStringList image_suffixes{".webp", ".apng", ".gif", ".png"};
+    // Try downloading the character-specific paths (first 4 entries, before placeholder fallbacks)
+    for (int i = 0; i < 4 && i < pathlist.size(); ++i)
+    {
+      QString path = pathlist[i].toQString();
+      if (!path.isEmpty())
+      {
+        QString lowerPath = ao_app->webcache()->resolve(path, image_suffixes);
+        if (!lowerPath.isEmpty())
+        {
+          qDebug() << "Resolving " << path << " for " << p_filename << " , " << p_charname << " , preanim: " << p_is_preanim;
+          dl_count += 1;
+          ao_app->webcache()->download(lowerPath);
+        }
+      }
+    }
+  }
+  return dl_count > 0;
 }
 
 void CharLayer::load_image(QString p_filename, QString p_charname,
@@ -212,22 +268,10 @@ void CharLayer::load_image(QString p_filename, QString p_charname,
            << current_emote << " from character: " << p_charname
            << " continuous: " << continuous;
 #endif
-  QVector<VPath> pathlist { // cursed character path resolution vector
-      ao_app->get_character_path(
-          p_charname, prefix + current_emote), // Default path
-      ao_app->get_character_path(
-          p_charname,
-          prefix + "/" + current_emote), // Path check if it's categorized
-                                          // into a folder
-      ao_app->get_character_path(
-          p_charname,
-          current_emote), // Just use the non-prefixed image, animated or not
-      VPath(current_emote), // The path by itself after the above fail
-      Options::getInstance().assetStreaming() ? VPath(ao_app->asset_url + "characters/" + p_charname + "/" + current_emote) : VPath(), // Streamed assets path
-      ao_app->get_theme_path("placeholder"), // Theme placeholder path
-      ao_app->get_theme_path(
-          "placeholder", ao_app->default_theme)}; // Default theme placeholder path
-  start_playback(ao_app->get_image_path(pathlist));
+  QVector<VPath> pathlist = ao_app->get_emote_paths(p_filename, p_charname, p_is_preanim);
+  QString resolved = ao_app->get_image_path(pathlist);
+
+  start_playback(resolved);
   play();
 }
 
