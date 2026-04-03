@@ -960,6 +960,9 @@ private:
   void reset_ui();
 
   void regenerate_ic_chatlog();
+
+  bool download_char_ini(QString char_name);
+
 public slots:
   void objection_done();
   void preanim_done();

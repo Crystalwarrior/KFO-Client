@@ -53,6 +53,11 @@ public:
   QString resolve(const QString &relativePath, const QStringList &suffixes = {""});
 
   /**
+   * @brief Helper function to call startDownload w/ all the necessary adjustments needed from just the relativePath
+   */
+  void download(const QString &relativePath);
+
+  /**
    * @brief Initiates an async download for the given remote URL.
    */
   void startDownload(const QString &remoteUrl, const QString &localPath, const QString &relativePath);

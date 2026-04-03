@@ -166,7 +166,14 @@ void BackgroundLayer::load_image(QString p_filename)
 
 bool CharLayer::download_image(QString p_filename, QString p_charname, bool p_is_preanim)
 {
-  if (p_filename.isEmpty())
+  QString test_path = p_filename;
+  // replace prefixes
+  QString prefix = p_filename.left(3);
+  if (prefix == "(a)" || prefix == "(b)" || prefix == "(c)")
+    test_path = test_path.mid(3, -1);
+  if (test_path == "-")
+    test_path = "";
+  if (test_path.isEmpty())
     return false;
   QVector<VPath> pathlist = ao_app->get_emote_paths(p_filename, p_charname, p_is_preanim);
   QString resolved = ao_app->get_image_path(pathlist);
@@ -185,18 +192,9 @@ bool CharLayer::download_image(QString p_filename, QString p_charname, bool p_is
         QString lowerPath = ao_app->webcache()->resolve(path, image_suffixes);
         if (!lowerPath.isEmpty())
         {
-          QString assetUrl = ao_app->asset_url;
-
-          // Local path uses lowercase without percent-encoding
-          QString localPath = ao_app->webcache()->cacheDir() + ao_app->webcache()->cacheSubdir() + lowerPath;
-
-          // Ensure asset URL ends with /
-          if (!assetUrl.endsWith('/'))
-          {
-            assetUrl += '/';
-          }
-          ao_app->webcache()->startDownload(assetUrl + ao_app->urlEncodePath(lowerPath), localPath, lowerPath);
+          qDebug() << "Resolving " << path << " for " << p_filename << " , " << p_charname << " , preanim: " << p_is_preanim;
           dl_count += 1;
+          ao_app->webcache()->download(lowerPath);
         }
       }
     }

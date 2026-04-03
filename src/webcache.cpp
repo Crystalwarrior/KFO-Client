@@ -98,6 +98,11 @@ bool WebCache::isExpired(const QString &localPath) const
   }
 
   int expiryHours = Options::getInstance().webcacheExpiryHours();
+  // 0 hours means webcache never expires
+  if (expiryHours <= 0)
+  {
+    return false;
+  }
   QDateTime expiryTime = fileInfo.lastModified().addSecs(expiryHours * 3600);
 
   return QDateTime::currentDateTime() > expiryTime;
@@ -178,6 +183,53 @@ QString WebCache::resolve(const QString &relativePath, const QStringList &suffix
   return "";
 }
 
+void WebCache::download(const QString &relativePath)
+{
+  // Check if server has an asset URL
+  QString assetUrl = ao_app->asset_url;
+  if (assetUrl.isEmpty())
+  {
+    return;
+  }
+
+  // Ensure asset URL ends with /
+  if (!assetUrl.endsWith('/'))
+  {
+    assetUrl += '/';
+  }
+
+  // Get cache subdirectory for this server's asset URL
+  QString subdir = cacheSubdir();
+  if (subdir.isEmpty())
+  {
+    return;
+  }
+
+  // Lowercase path for local storage and tracking (no percent-encoding)
+  QString lowerPath = ao_app->lowercasePath(relativePath);
+
+  // Check if already downloading this path
+  if (m_pending_downloads.contains(lowerPath))
+  {
+    return;
+  }
+
+  // Check if this path previously failed (don't retry within this session)
+  if (m_failed_downloads.contains(lowerPath))
+  {
+    return;
+  }
+
+  // Local path uses lowercase without percent-encoding
+  QString localPath = cacheDir() + subdir + lowerPath;
+
+  // Remote URL uses percent-encoded lowercase path
+  QString remoteUrl = assetUrl + ao_app->urlEncodePath(lowerPath);
+
+  // Begin the download
+  startDownload(remoteUrl, localPath, relativePath);
+}
+
 void WebCache::startDownload(const QString &remoteUrl, const QString &localPath, const QString &relativePath)
 {
   m_pending_downloads.insert(relativePath, true);
@@ -194,7 +246,6 @@ void WebCache::startDownload(const QString &remoteUrl, const QString &localPath,
 
 void WebCache::onDownloadFinished(QNetworkReply *reply)
 {
-  qDebug() << "WebCache: Download finished";
   QString localPath = reply->request().attribute(QNetworkRequest::User).toString();
   QString relativePath = reply->request().attribute(static_cast<QNetworkRequest::Attribute>(QNetworkRequest::User + 1)).toString();
 
