@@ -2656,6 +2656,14 @@ void Courtroom::chatmessage_dequeue()
   int dl_count = 0;
   if (Options::getInstance().webcacheEnabled())
   {
+    // background
+    QString side = pending_chatmessage[SIDE];
+    if (current_side.isEmpty()) {
+        side = ao_app->get_char_side(pending_chatmessage[CHAR_NAME]);
+    }
+    dl_count += ui_vp_background->download_image(ao_app->get_pos_path(side));
+    dl_count += ui_vp_desk->download_image(ao_app->get_pos_path(side, true));
+
     // download their char ini
     dl_count += download_char_ini(pending_chatmessage[CHAR_NAME]);
 

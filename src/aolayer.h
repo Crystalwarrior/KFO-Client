@@ -178,6 +178,9 @@ class BackgroundLayer : public AOLayer {
   Q_OBJECT
 public:
   BackgroundLayer(QWidget *p_parent, AOApplication *p_ao_app);
+  // returns true if download is needed or not
+  bool download_image(QString p_filename);
+
   void load_image(QString p_filename);
 signals:
   void hide_void();

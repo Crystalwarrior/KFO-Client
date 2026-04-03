@@ -144,6 +144,23 @@ void AOLayer::move_and_center(int ax, int ay)
     center_pixmap(movie_frames[0]); // just use the first frame since dimensions are all that matter
 }
 
+bool BackgroundLayer::download_image(QString p_filename)
+{
+  // Trigger webcache download if file not found locally
+  VPath vpath = ao_app->get_background_path(p_filename);
+  QString file_path = ao_app->get_image_suffix(vpath);
+  if (file_path.isEmpty() && Options::getInstance().webcacheEnabled())
+  {
+    QString lowerPath = ao_app->webcache()->resolve(vpath.toQString(), {".webp", ".apng", ".gif", ".png"});
+    if (!lowerPath.isEmpty())
+    {
+      ao_app->webcache()->download(lowerPath);
+      return true;
+    }
+  }
+  return false;
+}
+
 void BackgroundLayer::load_image(QString p_filename)
 {
   play_once = false;
