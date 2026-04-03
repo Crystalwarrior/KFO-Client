@@ -199,29 +199,7 @@ void Courtroom::char_clicked(int n_char)
       } else {
         // WebCache DL the char.ini
         if (Options::getInstance().webcacheEnabled()) {
-          QString lowerPath = ao_app->webcache()->resolve(char_ini_vpath.toQString());
-          qDebug() << "WebCache: resolving char ini of " << char_ini_vpath.toQString();
-          if (!lowerPath.isEmpty()) {
-            qDebug() << "WebCache: starting download of char ini " << lowerPath;
-            // single-shot: auto-disconnects after first emission
-            QMetaObject::Connection conn = connect(ao_app->webcache(), &WebCache::fileDownloaded, this, [this, n_char](const QString &relativePath) {
-              QString real_path = ao_app->get_real_path(VPath(relativePath));
-              qDebug() << "Success, setting char ini to path " << real_path;
-              if (n_char != this->m_cid || n_char == -1) {
-                this->ao_app->send_server_packet(
-                    new AOPacket("PW", {this->ui_char_password->text()}));
-                this->ao_app->send_server_packet(
-                    new AOPacket("CC", {QString::number(this->ao_app->client_id),
-                                        QString::number(n_char), get_hdid()}));
-              }
-              if (n_char == this->m_cid || n_char == -1) {
-                this->update_character(n_char);
-                this->enter_courtroom();
-                this->set_courtroom_size();
-              }
-            }, Qt::SingleShotConnection);
-            ao_app->webcache()->download(lowerPath);
-          }
+          download_char_ini(char_name);
           return;
         }
         // QMessageBox msgBox;
@@ -255,8 +233,17 @@ void Courtroom::char_clicked(int n_char)
       }
     }
     qDebug() << "Found char.ini for" << char_name << "at" << char_ini_path;
+    set_charname(char_name);
   }
+}
 
+void Courtroom::set_charname(QString char_name)
+{
+  int n_char = -1;
+  for (int cid = 0; cid < char_list.size(); cid++) {
+    if (char_list.at(cid).name == char_name)
+      n_char = cid;
+  }
   if (n_char != m_cid || n_char == -1) {
     ao_app->send_server_packet(
         new AOPacket("PW", {ui_char_password->text()}));

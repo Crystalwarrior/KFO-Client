@@ -963,6 +963,8 @@ private:
 
   bool download_char_ini(QString char_name);
 
+  void set_charname(QString char_name);
+
 public slots:
   void objection_done();
   void preanim_done();

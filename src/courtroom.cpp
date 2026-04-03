@@ -7018,6 +7018,22 @@ void Courtroom::on_webcache_file_downloaded(const QString &relativePath)
 {
   // Invalidate the asset lookup cache so future lookups find the cached file
   // ao_app->invalidate_lookup_cache();
+  QString char_name;
+  if (relativePath.startsWith("characters/"))
+  {
+    // Extract character name from path: "characters/name/char.ini" -> "name"
+    QString charPath = relativePath.mid(11); // Remove "characters/"
+    int slashPos = charPath.indexOf('/');
+    if (slashPos > 0)
+    {
+      char_name = charPath.left(slashPos);
+    }
+  }
+
+  if (ui_char_select_background->isVisible() && relativePath.endsWith("/char.ini") && ao_app->net_manager->streamed_charname == char_name)
+  {
+    set_charname(char_name);
+  }
 
   // beyond this point is the message queue logic
   if (pending_chatmessage.isEmpty() || ao_app->webcache()->pendingDownloads() > 0)
@@ -7039,7 +7055,7 @@ void Courtroom::on_webcache_download_failed(const QString &relativePath)
 
 bool Courtroom::download_char_ini(QString char_name)
 {
-    if (!Options::getInstance().webcacheEnabled())
+    if (!Options::getInstance().webcacheEnabled() || ao_app->asset_url.isEmpty())
     {
       return false;
     }
